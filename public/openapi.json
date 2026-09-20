@@ -1,0 +1,238 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Evidence API",
+    "version": "0.1.0",
+    "description": "Registro de conversas de discovery B2B. Recebe o despejo de uma conversa, extrai fatos rastreáveis por origem e aponta os campos do perfil da firma que ainda estão vazios."
+  },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/api/conversations": {
+      "post": {
+        "summary": "Grava um despejo de conversa e extrai fatos",
+        "description": "Recebe o texto bruto de uma conversa, chama o Gemini para extrair fatos, aplica as regras de negócio de qualidade da evidência, e grava fatos e/ou perguntas em aberto. Devolve exatamente o que foi gravado.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ConversationInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conversa gravada. Fatos e/ou perguntas em aberto extraídos.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ConversationResult" }
+              }
+            }
+          },
+          "400": { "description": "Corpo da requisição inválido." },
+          "404": { "description": "firm_id ou contact_id não encontrado." },
+          "502": { "description": "Falha ao extrair fatos com o Gemini. A conversa já foi gravada; o conversation_id vem em details." }
+        }
+      }
+    },
+    "/api/firms/{id}": {
+      "get": {
+        "summary": "Perfil da firma com os fatos e a origem de cada um",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil da firma.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FirmProfile" }
+              }
+            }
+          },
+          "404": { "description": "Firma não encontrada." }
+        }
+      }
+    },
+    "/api/firms/{id}/open-questions": {
+      "get": {
+        "summary": "Perguntas em aberto da firma (para a próxima conversa)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de perguntas com status open.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpenQuestionsList" }
+              }
+            }
+          },
+          "404": { "description": "Firma não encontrada." }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProfileField": {
+        "type": "string",
+        "enum": [
+          "interlocutor",
+          "decisor_ou_operador",
+          "quem_opera_dd",
+          "origem_do_contato",
+          "tamanho_praca_cliente",
+          "volume_dd",
+          "entregavel_final",
+          "quem_faz_preparacao_hoje",
+          "ia_em_uso",
+          "gargalo_frase_literal",
+          "horas_do_gargalo_por_projeto",
+          "de_quem_sao_as_horas",
+          "projetos_por_mes",
+          "destino_da_hora_economizada",
+          "preco_testado",
+          "reacao_ao_preco",
+          "objecao_principal",
+          "shadowing",
+          "acesso_data_room",
+          "proximo_passo"
+        ]
+      },
+      "FirmStage": {
+        "type": "string",
+        "enum": [
+          "nao-contatada",
+          "conversa-marcada",
+          "conversa-feita",
+          "preco-testado",
+          "piloto-proposto",
+          "assinou",
+          "descartada"
+        ],
+        "description": "Só muda por ação explícita do usuário. Nenhum endpoint desta API altera stage a partir de texto de conversa."
+      },
+      "FactConfidence": {
+        "type": "string",
+        "enum": ["stated", "reported"],
+        "description": "stated: dito diretamente por quem vive o fato. reported: repassado por terceiro. Campos de custo (horas_do_gargalo_por_projeto, de_quem_sao_as_horas, projetos_por_mes, destino_da_hora_economizada) só gravam com stated."
+      },
+      "ConversationInput": {
+        "type": "object",
+        "required": ["firm_id", "raw_dump"],
+        "properties": {
+          "firm_id": { "type": "string", "format": "uuid" },
+          "contact_id": { "type": ["string", "null"], "format": "uuid" },
+          "happened_on": { "type": "string", "format": "date", "description": "YYYY-MM-DD, default hoje." },
+          "raw_dump": { "type": "string", "description": "Texto bruto da conversa, escrito ou ditado logo após a call." }
+        }
+      },
+      "ConversationResult": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "firm_id": { "type": "string", "format": "uuid" },
+              "contact_id": { "type": ["string", "null"], "format": "uuid" },
+              "happened_on": { "type": "string", "format": "date" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "facts_recorded": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "field": { "$ref": "#/components/schemas/ProfileField" },
+                "statement": { "type": "string" },
+                "verbatim": { "type": ["string", "null"] },
+                "confidence": { "$ref": "#/components/schemas/FactConfidence" }
+              }
+            }
+          },
+          "open_questions_recorded": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "field": { "$ref": "#/components/schemas/ProfileField" },
+                "question": { "type": "string" },
+                "status": { "type": "string", "enum": ["open", "answered", "dropped"] }
+              }
+            }
+          }
+        }
+      },
+      "FirmProfile": {
+        "type": "object",
+        "properties": {
+          "firm": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "country": { "type": ["string", "null"] },
+              "size": { "type": ["string", "null"] },
+              "stage": { "$ref": "#/components/schemas/FirmStage" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "field": { "$ref": "#/components/schemas/ProfileField" },
+                "statement": { "type": "string" },
+                "verbatim": { "type": ["string", "null"] },
+                "confidence": { "$ref": "#/components/schemas/FactConfidence" },
+                "source": {
+                  "type": "object",
+                  "properties": {
+                    "conversation_id": { "type": "string", "format": "uuid" },
+                    "happened_on": { "type": ["string", "null"], "format": "date" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OpenQuestionsList": {
+        "type": "object",
+        "properties": {
+          "firm_id": { "type": "string", "format": "uuid" },
+          "open_questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "field": { "$ref": "#/components/schemas/ProfileField" },
+                "question": { "type": "string" },
+                "status": { "type": "string", "enum": ["open", "answered", "dropped"] },
+                "created_at": { "type": "string", "format": "date-time" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

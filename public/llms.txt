@@ -1,0 +1,61 @@
+# Evidence
+
+> Registro de conversas de discovery B2B. Despeja o texto bruto de uma conversa,
+> a API extrai fatos rastreáveis (com origem: qual conversa, qual data) e aponta
+> os campos do perfil da firma que continuam vazios, com as perguntas certas
+> para a próxima conversa.
+
+API-first: todo recurso é um endpoint JSON. Este arquivo e /openapi.json existem
+para que um agente use a API sem ler o código-fonte.
+
+Especificação completa (OpenAPI 3.1): /openapi.json
+
+## Vocabulário controlado
+
+`firms.stage` (só muda por ação explícita do usuário, nunca por inferência de
+conversa): nao-contatada, conversa-marcada, conversa-feita, preco-testado,
+piloto-proposto, assinou, descartada.
+
+`field` (usado em facts e em open_questions), exatamente 20 valores:
+interlocutor, decisor_ou_operador, quem_opera_dd, origem_do_contato,
+tamanho_praca_cliente, volume_dd, entregavel_final, quem_faz_preparacao_hoje,
+ia_em_uso, gargalo_frase_literal, horas_do_gargalo_por_projeto,
+de_quem_sao_as_horas, projetos_por_mes, destino_da_hora_economizada,
+preco_testado, reacao_ao_preco, objecao_principal, shadowing,
+acesso_data_room, proximo_passo.
+
+`confidence`: stated (dito diretamente) | reported (repassado por terceiro).
+
+## Regras de negócio que a API aplica antes de gravar
+
+1. Campos de custo (horas_do_gargalo_por_projeto, de_quem_sao_as_horas,
+   projetos_por_mes, destino_da_hora_economizada) só gravam em facts com
+   confidence = stated. Com reported, a API cria uma open_question no lugar —
+   não descarta a informação, rebaixa ela para "pergunta a confirmar".
+2. gargalo_frase_literal só grava se vier com a frase literal (verbatim). Sem
+   verbatim, vira open_question.
+3. Nenhum endpoint desta API muda firms.stage a partir de texto de conversa.
+   Mudança de estágio é decisão explícita do usuário, fora deste fluxo.
+
+## Endpoints
+
+### POST /api/conversations
+Grava um despejo de conversa. Corpo: { firm_id, contact_id?, happened_on?,
+raw_dump }. Chama o Gemini internamente, aplica as regras acima, e devolve
+exatamente o que gravou: { conversation, facts_recorded, open_questions_recorded }.
+
+### GET /api/firms/{id}
+Perfil da firma: dados cadastrais + todos os fatos conhecidos, cada um com a
+origem (conversation_id e data da conversa que o gerou).
+
+### GET /api/firms/{id}/open-questions
+Perguntas em aberto (status = open) para essa firma — o que ainda falta saber,
+pronto para levar para a próxima conversa.
+
+## Notas
+
+- Toda resposta é JSON. Erros vêm como { error, details? } com o status HTTP
+  correspondente (400 corpo inválido, 404 recurso não encontrado, 502 falha no
+  Gemini, 500 erro interno).
+- Não existe (ainda) endpoint para criar firms/contacts nem para mudar
+  firms.stage — isso é uma decisão em aberto do projeto, ver README.
