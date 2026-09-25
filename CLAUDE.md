@@ -14,7 +14,7 @@ Projeto final da eletiva de Automation da Link (grupo de três). Datas:
 
 - Next.js (App Router), deploy na Vercel.
 - Supabase/PostgreSQL.
-- Google Gemini como integração externa (extração de fatos).
+- OpenAI (modelo `gpt-6-luna`, SDK oficial `openai`) como integração externa (extração de fatos).
 
 ## Princípio de arquitetura: API-first
 
@@ -26,7 +26,7 @@ backend, nunca no cliente.
 Motivo: um segundo consumidor da API vai ser um agente, não uma pessoa. `/llms.txt`
 e `/openapi.json` existem para que esse agente use a API sem ler código.
 
-## Regras de negócio (não vivem no prompt do Gemini — vivem no backend, têm teste)
+## Regras de negócio (não vivem no prompt do modelo — vivem no backend, têm teste)
 
 Estas três regras são o diferencial técnico do projeto. Não podem se perder numa
 refatoração. Testes cobrindo cada uma ficam em `src/lib/facts/*.test.ts` (ou
@@ -55,7 +55,7 @@ equivalente) e devem continuar passando.
 
 ## Credenciais
 
-A chave do Gemini e as credenciais do Supabase entram por variável de ambiente
+A chave da OpenAI (`OPENAI_API_KEY`) e as credenciais do Supabase entram por variável de ambiente
 (`.env.local`, nunca commitado). Nunca peça, gere ou escreva uma chave em arquivo.
 
 ## Restrições (valem para qualquer sessão neste projeto)
@@ -66,6 +66,6 @@ A chave do Gemini e as credenciais do Supabase entram por variável de ambiente
   Este projeto não tem relação com o second brain nem com o gbrain.
 - Não roda comando de escrita fora do diretório de trabalho sem antes confirmar na
   documentação oficial o que ele faz de verdade.
-- Não inventa sintaxe: lê a documentação do Supabase e do SDK do Gemini antes de
+- Não inventa sintaxe: lê a documentação do Supabase e do SDK da OpenAI antes de
   usar.
 - Decisão que o usuário não tomou, o agente não toma por ele: propõe e espera.

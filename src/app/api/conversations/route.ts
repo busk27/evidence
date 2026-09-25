@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { PROFILE_FIELDS, type ProfileField } from "@/lib/domain";
-import { extractFactsFromDump } from "@/lib/gemini/extract";
+import { extractFactsFromDump } from "@/lib/extraction/extract";
 import { prepareWrite } from "@/lib/facts/persist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       emptyFields,
     });
   } catch (err) {
-    return jsonError(502, "Falha ao extrair fatos com o Gemini.", {
+    return jsonError(502, "Falha ao extrair fatos com o modelo.", {
       conversation_id: conversation.id,
       message: err instanceof Error ? err.message : String(err),
     });

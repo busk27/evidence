@@ -7,10 +7,36 @@
   },
   "servers": [{ "url": "/" }],
   "paths": {
+    "/api/firms": {
+      "post": {
+        "summary": "Cria uma firma, opcionalmente com um contato",
+        "description": "Toda firma nasce com stage = nao-contatada. O corpo não aceita stage nem nenhuma chave fora do schema (400).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FirmInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Firma (e contato, se enviado) gravados.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FirmCreated" }
+              }
+            }
+          },
+          "400": { "description": "Corpo da requisição inválido (inclui tentativa de enviar stage)." },
+          "500": { "description": "Erro ao gravar. Se a firma foi gravada e o contato não, o firm_id vem em details." }
+        }
+      }
+    },
     "/api/conversations": {
       "post": {
         "summary": "Grava um despejo de conversa e extrai fatos",
-        "description": "Recebe o texto bruto de uma conversa, chama o Gemini para extrair fatos, aplica as regras de negócio de qualidade da evidência, e grava fatos e/ou perguntas em aberto. Devolve exatamente o que foi gravado.",
+        "description": "Recebe o texto bruto de uma conversa, chama o modelo para extrair fatos, aplica as regras de negócio de qualidade da evidência, e grava fatos e/ou perguntas em aberto. Devolve exatamente o que foi gravado.",
         "requestBody": {
           "required": true,
           "content": {
@@ -30,7 +56,7 @@
           },
           "400": { "description": "Corpo da requisição inválido." },
           "404": { "description": "firm_id ou contact_id não encontrado." },
-          "502": { "description": "Falha ao extrair fatos com o Gemini. A conversa já foi gravada; o conversation_id vem em details." }
+          "502": { "description": "Falha ao extrair fatos com o modelo. A conversa já foi gravada; o conversation_id vem em details." }
         }
       }
     },
@@ -127,6 +153,52 @@
         "type": "string",
         "enum": ["stated", "reported"],
         "description": "stated: dito diretamente por quem vive o fato. reported: repassado por terceiro. Campos de custo (horas_do_gargalo_por_projeto, de_quem_sao_as_horas, projetos_por_mes, destino_da_hora_economizada) só gravam com stated."
+      },
+      "FirmInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "country": { "type": ["string", "null"] },
+          "size": { "type": ["string", "null"] },
+          "contact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "role": { "type": ["string", "null"] },
+              "email": { "type": ["string", "null"], "format": "email" }
+            }
+          }
+        }
+      },
+      "FirmCreated": {
+        "type": "object",
+        "properties": {
+          "firm": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "country": { "type": ["string", "null"] },
+              "size": { "type": ["string", "null"] },
+              "stage": { "$ref": "#/components/schemas/FirmStage" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "contact": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "firm_id": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "role": { "type": ["string", "null"] },
+              "email": { "type": ["string", "null"] }
+            }
+          }
+        }
       },
       "ConversationInput": {
         "type": "object",

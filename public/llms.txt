@@ -39,9 +39,16 @@ acesso_data_room, proximo_passo.
 
 ## Endpoints
 
+### POST /api/firms
+Cria uma firma, opcionalmente com um contato. Corpo: { name, country?, size?,
+contact?: { name, role?, email? } }. Toda firma nasce com stage =
+nao-contatada; mandar "stage" (ou qualquer chave fora deste shape) devolve 400.
+Resposta 201: { firm, contact } — contact é null se não foi enviado. Use
+firm.id e contact.id no POST /api/conversations.
+
 ### POST /api/conversations
 Grava um despejo de conversa. Corpo: { firm_id, contact_id?, happened_on?,
-raw_dump }. Chama o Gemini internamente, aplica as regras acima, e devolve
+raw_dump }. Chama o modelo internamente, aplica as regras acima, e devolve
 exatamente o que gravou: { conversation, facts_recorded, open_questions_recorded }.
 
 ### GET /api/firms/{id}
@@ -56,6 +63,7 @@ pronto para levar para a próxima conversa.
 
 - Toda resposta é JSON. Erros vêm como { error, details? } com o status HTTP
   correspondente (400 corpo inválido, 404 recurso não encontrado, 502 falha no
-  Gemini, 500 erro interno).
-- Não existe (ainda) endpoint para criar firms/contacts nem para mudar
+  o modelo, 500 erro interno).
+- Contatos só são criados junto com a firma (POST /api/firms). Não existe
+  (ainda) endpoint para adicionar contato a firma existente nem para mudar
   firms.stage — isso é uma decisão em aberto do projeto, ver README.

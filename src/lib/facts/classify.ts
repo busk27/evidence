@@ -37,7 +37,7 @@ const REJECTION_QUESTION: Record<string, string> = {
 };
 
 /**
- * Aplica as três regras de negócio do CLAUDE.md sobre os fatos que o Gemini
+ * Aplica as três regras de negócio do CLAUDE.md sobre os fatos que o modelo
  * extraiu. Fatos rejeitados por essas regras não são descartados — viram
  * pergunta para a próxima conversa (open_questions), nunca linha em facts.
  */
