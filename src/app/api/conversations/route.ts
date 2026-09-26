@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
   const { data: existingFacts, error: existingFactsError } = await supabase
     .from("facts")
     .select("field")
-    .eq("firm_id", firm_id);
+    .eq("firm_id", firm_id)
+    .eq("status", "valid");
 
   if (existingFactsError)
     return jsonError(500, "Erro ao buscar fatos existentes.", existingFactsError.message);

@@ -107,6 +107,105 @@
           "404": { "description": "Firma não encontrada." }
         }
       }
+    },
+    "/api/facts/{id}/retract": {
+      "post": {
+        "summary": "Marca um fato como errado, sem apagar",
+        "description": "O fato continua no banco com status = wrong e o motivo, mas sai do perfil. Se o campo ficar sem nenhum fato válido e sem pergunta aberta, cria uma open_question com a pergunta do campo (regra 4: campo vazio vira pergunta).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/RetractInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fato marcado como errado. open_question vem null se o campo ainda tem fato válido ou já tinha pergunta aberta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetractResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id não é uuid, ou corpo inválido (fora de UTF-8, JSON malformado, reason vazio, chave fora do schema)."
+          },
+          "404": {
+            "description": "Fato não encontrado."
+          },
+          "409": {
+            "description": "Fato já está marcado como errado."
+          }
+        }
+      }
+    },
+    "/api/facts/{id}/correct": {
+      "post": {
+        "summary": "Corrige um fato: marca o original como errado e grava a versão certa",
+        "description": "A versão certa fica no mesmo campo e na mesma conversa do original, com corrects_fact_id apontando para ele. Ela passa pelas mesmas regras de um fato extraído: regra 1 (campo de custo só com stated), regra 2 (gargalo_frase_literal exige verbatim), regra 4 (ausência não é fato) e a trava de verbatim (o verbatim precisa aparecer como fala no despejo da conversa original). Se violar qualquer uma, responde 422 e nada muda. O campo não pode ser trocado.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Original marcado como errado e versão certa gravada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id não é uuid, ou corpo inválido (fora de UTF-8, JSON malformado, chave fora do schema, inclusive field ou stage)."
+          },
+          "404": {
+            "description": "Fato não encontrado."
+          },
+          "409": {
+            "description": "Fato já está marcado como errado."
+          },
+          "422": {
+            "description": "A correção viola uma regra de negócio. O motivo vem em error."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -266,6 +365,7 @@
           },
           "facts": {
             "type": "array",
+            "description": "Só fatos válidos. Fatos marcados como errados não aparecem.",
             "items": {
               "type": "object",
               "properties": {
@@ -274,6 +374,7 @@
                 "statement": { "type": "string" },
                 "verbatim": { "type": ["string", "null"] },
                 "confidence": { "$ref": "#/components/schemas/FactConfidence" },
+                "corrects_fact_id": { "type": ["string", "null"], "format": "uuid", "description": "Se este fato é a correção de outro, o id do original (marcado como errado)." },
                 "source": {
                   "type": "object",
                   "properties": {
@@ -302,6 +403,152 @@
                 "created_at": { "type": "string", "format": "date-time" }
               }
             }
+          }
+        }
+      },
+      "FactStatus": {
+        "type": "string",
+        "enum": [
+          "valid",
+          "wrong"
+        ],
+        "description": "Fato nunca é editado nem apagado. wrong: marcado como errado pelo usuário, sai do perfil, continua no banco com o motivo."
+      },
+      "RetractInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Por que o fato está errado."
+          }
+        }
+      },
+      "CorrectInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason",
+          "statement",
+          "confidence"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Por que o original está errado."
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "verbatim": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Só trecho que o despejo marca como fala do interlocutor (aspas, ou logo depois de \"ele disse que\", \"ele falou assim\", \"nas palavras dele\", \"com essas palavras\")."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/FactConfidence"
+          }
+        }
+      },
+      "RevisedFact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "field": {
+            "$ref": "#/components/schemas/ProfileField"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "verbatim": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/FactConfidence"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FactStatus"
+          },
+          "status_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status_changed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "corrects_fact_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "RetractResult": {
+        "type": "object",
+        "properties": {
+          "fact": {
+            "$ref": "#/components/schemas/RevisedFact"
+          },
+          "open_question": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "field": {
+                "$ref": "#/components/schemas/ProfileField"
+              },
+              "question": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "open"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "CorrectResult": {
+        "type": "object",
+        "properties": {
+          "original": {
+            "$ref": "#/components/schemas/RevisedFact"
+          },
+          "fact": {
+            "$ref": "#/components/schemas/RevisedFact"
           }
         }
       }

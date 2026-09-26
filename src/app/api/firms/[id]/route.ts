@@ -23,9 +23,11 @@ export async function GET(
   const { data: facts, error: factsError } = await supabase
     .from("facts")
     .select(
-      "id, field, statement, verbatim, confidence, created_at, conversation_id, conversations(happened_on)"
+      "id, field, statement, verbatim, confidence, created_at, conversation_id, corrects_fact_id, conversations(happened_on)"
     )
     .eq("firm_id", id)
+    // Fato marcado como errado sai do perfil (continua no banco, com motivo).
+    .eq("status", "valid")
     .order("created_at", { ascending: true });
 
   if (factsError) return jsonError(500, "Erro ao buscar fatos.", factsError.message);
@@ -38,6 +40,7 @@ export async function GET(
       statement: fact.statement,
       verbatim: fact.verbatim,
       confidence: fact.confidence,
+      corrects_fact_id: fact.corrects_fact_id,
       source: {
         conversation_id: fact.conversation_id,
         happened_on:

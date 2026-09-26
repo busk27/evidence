@@ -5,6 +5,7 @@ import {
   type ProfileField,
 } from "@/lib/domain";
 import { isAbsenceStatement } from "./absence";
+import { FIELD_QUESTIONS } from "./questions";
 
 export type ExtractedFact = {
   field: ProfileField;
@@ -31,13 +32,6 @@ export type ClassifyResult = {
   // Regra 4: campos cujo "fato" era só a ausência do assunto na conversa.
   // Ficam vazios e entram na lista de campos a perguntar.
   fieldsLeftEmpty: ProfileField[];
-};
-
-const REJECTION_QUESTION: Record<string, string> = {
-  cost_needs_stated:
-    "Qual é o número exato, dito diretamente por quem vive esse número (não repassado por terceiros)?",
-  verbatim_missing:
-    "Qual foi a frase exata usada para descrever o gargalo? Peça a citação literal.",
 };
 
 /**
@@ -67,7 +61,7 @@ export function classifyExtractedFacts(
     ) {
       fieldsRejectedAsQuestions.push({
         field: fact.field,
-        question: REJECTION_QUESTION.verbatim_missing,
+        question: FIELD_QUESTIONS[fact.field],
       });
       continue;
     }
@@ -76,7 +70,7 @@ export function classifyExtractedFacts(
     if (COST_FIELDS.includes(fact.field) && fact.confidence !== "stated") {
       fieldsRejectedAsQuestions.push({
         field: fact.field,
-        question: REJECTION_QUESTION.cost_needs_stated,
+        question: FIELD_QUESTIONS[fact.field],
       });
       continue;
     }

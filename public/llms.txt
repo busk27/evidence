@@ -58,12 +58,28 @@ raw_dump }. Chama o modelo internamente, aplica as regras acima, e devolve
 exatamente o que gravou: { conversation, facts_recorded, open_questions_recorded }.
 
 ### GET /api/firms/{id}
-Perfil da firma: dados cadastrais + todos os fatos conhecidos, cada um com a
-origem (conversation_id e data da conversa que o gerou).
+Perfil da firma: dados cadastrais + todos os fatos válidos, cada um com a
+origem (conversation_id e data da conversa que o gerou). Fato marcado como
+errado não aparece; fato que corrige outro traz corrects_fact_id.
 
 ### GET /api/firms/{id}/open-questions
 Perguntas em aberto (status = open) para essa firma — o que ainda falta saber,
 pronto para levar para a próxima conversa.
+
+### POST /api/facts/{id}/retract
+Marca um fato como errado, sem apagar. Corpo: { reason }. O fato sai do
+perfil e fica no banco com status = wrong e o motivo. Se o campo ficar sem
+nenhum fato válido, nasce uma open_question com a pergunta do campo.
+Resposta 200: { fact, open_question } (open_question null se não precisou).
+409 se o fato já estava marcado como errado.
+
+### POST /api/facts/{id}/correct
+Corrige um fato. Corpo: { reason, statement, verbatim?, confidence }. Marca o
+original como errado e grava a versão certa no mesmo campo e na mesma
+conversa, com corrects_fact_id apontando para o original. A versão certa passa
+pelas regras 1, 2 e 4 e pela trava de verbatim, contra o despejo da conversa
+original. Violou, 422 com o motivo e nada muda. Não dá para trocar o campo.
+Resposta 201: { original, fact }.
 
 ## Notas
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildOpenQuestions, prepareWrite } from "./persist";
 import { extractionSchema, type Extraction } from "@/lib/extraction/schema";
+import { FIELD_QUESTIONS, isUsableQuestion } from "./questions";
 
 describe("buildOpenQuestions", () => {
   it("prioriza perguntas rejeitadas por regra de negócio sobre next_questions", () => {
@@ -51,14 +52,50 @@ describe("buildOpenQuestions", () => {
     expect(result).toHaveLength(1);
   });
 
-  it("still_empty sem pergunta do modelo ganha pergunta genérica", () => {
+  it("still_empty sem pergunta do modelo ganha a pergunta de reserva do campo", () => {
     const result = buildOpenQuestions(
       { still_empty: ["acesso_data_room"], next_questions: [] },
       []
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0].field).toBe("acesso_data_room");
+    expect(result).toEqual([
+      { field: "acesso_data_room", question: FIELD_QUESTIONS.acesso_data_room },
+    ]);
+  });
+
+  // P3: o caso real da Ática, "O que ainda falta saber sobre volume_dd?".
+  it.each([
+    "O que ainda falta saber sobre volume_dd?",
+    "Qual é o volume_dd de vocês?",
+    "O que falta saber sobre o volume?",
+    "   ",
+  ])("pergunta do modelo que não dá para falar em voz alta é trocada: %s", (question) => {
+    const result = buildOpenQuestions(
+      { still_empty: ["volume_dd"], next_questions: [{ field: "volume_dd", question }] },
+      []
+    );
+
+    expect(result).toEqual([
+      { field: "volume_dd", question: "Quantas DDs vocês fazem por mês, e quantos documentos costuma ter cada uma?" },
+    ]);
+  });
+
+  it("pergunta boa do modelo é mantida", () => {
+    const result = buildOpenQuestions(
+      {
+        still_empty: ["volume_dd"],
+        next_questions: [{ field: "volume_dd", question: "Quantas DDs a Ática faz por mês?" }],
+      },
+      []
+    );
+
+    expect(result).toEqual([{ field: "volume_dd", question: "Quantas DDs a Ática faz por mês?" }]);
+  });
+
+  it("nenhum campo tem pergunta de reserva genérica ou com nome de campo", () => {
+    for (const question of Object.values(FIELD_QUESTIONS)) {
+      expect(isUsableQuestion(question)).toBe(true);
+    }
   });
 
   it("não pergunta de campo que virou fato nesta conversa", () => {

@@ -2,6 +2,7 @@ import type { Extraction } from "@/lib/extraction/schema";
 import type { ProfileField } from "@/lib/domain";
 import { classifyExtractedFacts, type QuestionToRecord } from "./classify";
 import { keepOnlyMarkedVerbatim } from "./verbatim";
+import { FIELD_QUESTIONS, isUsableQuestion } from "./questions";
 
 export type FactRow = {
   field: ProfileField;
@@ -24,8 +25,10 @@ export type PreparedWrite = {
  * Junta os campos rejeitados pelas regras de negócio (classify.ts) com as
  * next_questions do modelo e os campos still_empty, em uma única lista de
  * open_questions — sem duplicar campo, e sem perguntar de campo que acabou de
- * virar fato. Cada pergunta do modelo já vem amarrada ao seu campo; still_empty
- * sem pergunta ganha uma pergunta genérica.
+ * virar fato. Cada pergunta do modelo já vem amarrada ao seu campo. Pergunta do
+ * modelo que não dá para fazer em voz alta (cita nome de campo, "o que falta
+ * saber sobre X") é descartada; campo sem pergunta boa ganha a pergunta de
+ * reserva do campo (FIELD_QUESTIONS).
  */
 export function buildOpenQuestions(
   extraction: Pick<Extraction, "still_empty" | "next_questions">,
@@ -44,10 +47,10 @@ export function buildOpenQuestions(
   };
 
   for (const item of rejected) push(item.field, item.question);
-  for (const item of extraction.next_questions) push(item.field, item.question);
-  for (const field of extraction.still_empty) {
-    push(field, `O que ainda falta saber sobre ${field}?`);
+  for (const item of extraction.next_questions) {
+    if (isUsableQuestion(item.question)) push(item.field, item.question);
   }
+  for (const field of extraction.still_empty) push(field, FIELD_QUESTIONS[field]);
 
   return result;
 }

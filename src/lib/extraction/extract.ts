@@ -34,9 +34,14 @@ Rules:
 6. If the dump does not touch a field, leave that field empty. An empty field is a
    result, not a failure.
 7. "still_empty" lists the profile fields that remain empty after this conversation.
-8. "next_questions" has one question per still-empty field, each tied to that field
-   in "field". Write only questions that would fill that exact field. Prefer the
-   fields most useful for the next conversation; at most 5 questions.
+8. "next_questions" has one question for EVERY still-empty field, each tied to
+   that field in "field", and only questions that would fill that exact field.
+   Each question is what you would say out loud to the contact in the next call:
+   direct, addressed to them ("você", "vocês"), concrete, one thing at a time,
+   built on what this conversation already told you. Never mention field names
+   or any internal vocabulary.
+   Bad: "O que ainda falta saber sobre volume_dd?"
+   Good: "Quantas DDs vocês fazem por mês?"
 9. Write statements and questions in the language of the dump.
 
 Field notes:
