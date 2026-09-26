@@ -2,16 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createFirmSchema } from "@/lib/firms/create";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
+import { readJsonBody } from "@/lib/api/read-json";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return jsonError(400, "Corpo da requisição precisa ser JSON válido.");
-  }
+  const read = await readJsonBody(request);
+  if (!read.ok) return read.response;
+  const body = read.body;
 
   const parsed = createFirmSchema.safeParse(body);
   if (!parsed.success) {

@@ -3,7 +3,7 @@
   "info": {
     "title": "Evidence API",
     "version": "0.1.0",
-    "description": "Registro de conversas de discovery B2B. Recebe o despejo de uma conversa, extrai fatos rastreáveis por origem e aponta os campos do perfil da firma que ainda estão vazios."
+    "description": "Registro de conversas de discovery B2B. Recebe o despejo de uma conversa, extrai fatos rastreáveis por origem e aponta os campos do perfil da firma que ainda estão vazios. Todo corpo de requisição deve ser JSON em UTF-8; corpo com bytes fora de UTF-8 ou com charset declarado diferente de utf-8 é recusado com 400, nunca gravado."
   },
   "servers": [{ "url": "/" }],
   "paths": {
@@ -14,7 +14,7 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "application/json; charset=utf-8": {
               "schema": { "$ref": "#/components/schemas/FirmInput" }
             }
           }
@@ -28,7 +28,7 @@
               }
             }
           },
-          "400": { "description": "Corpo da requisição inválido (inclui tentativa de enviar stage)." },
+          "400": { "description": "Corpo da requisição inválido: fora de UTF-8, charset diferente de utf-8, JSON malformado, ou fora do schema (inclui tentativa de enviar stage)." },
           "500": { "description": "Erro ao gravar. Se a firma foi gravada e o contato não, o firm_id vem em details." }
         }
       }
@@ -40,7 +40,7 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "application/json; charset=utf-8": {
               "schema": { "$ref": "#/components/schemas/ConversationInput" }
             }
           }
@@ -54,7 +54,7 @@
               }
             }
           },
-          "400": { "description": "Corpo da requisição inválido." },
+          "400": { "description": "Corpo da requisição inválido: fora de UTF-8, charset diferente de utf-8, JSON malformado, ou fora do schema." },
           "404": { "description": "firm_id ou contact_id não encontrado." },
           "502": { "description": "Falha ao extrair fatos com o modelo. A conversa já foi gravada; o conversation_id vem em details." }
         }

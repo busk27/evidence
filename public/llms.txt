@@ -61,6 +61,11 @@ pronto para levar para a próxima conversa.
 
 ## Notas
 
+- Todo corpo de requisição deve ser JSON em UTF-8 (Content-Type:
+  application/json; charset=utf-8). Corpo com bytes fora de UTF-8, ou com
+  charset declarado diferente de utf-8, é recusado com 400 — a API não grava
+  texto corrompido. No Windows, mande o corpo a partir de arquivo UTF-8
+  (curl --data-binary @corpo.json) em vez de JSON inline no terminal.
 - Toda resposta é JSON. Erros vêm como { error, details? } com o status HTTP
   correspondente (400 corpo inválido, 404 recurso não encontrado, 502 falha no
   o modelo, 500 erro interno).
