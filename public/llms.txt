@@ -33,9 +33,15 @@ acesso_data_room, proximo_passo.
    confidence = stated. Com reported, a API cria uma open_question no lugar —
    não descarta a informação, rebaixa ela para "pergunta a confirmar".
 2. gargalo_frase_literal só grava se vier com a frase literal (verbatim). Sem
-   verbatim, vira open_question.
+   verbatim, vira open_question. Verbatim só vale quando o despejo marca o
+   trecho como fala do interlocutor: entre aspas, ou logo depois de "ele disse
+   que", "ele falou assim", "nas palavras dele", "com essas palavras". Anotação
+   de quem escreveu o despejo não é citação: a API zera esse verbatim.
 3. Nenhum endpoint desta API muda firms.stage a partir de texto de conversa.
    Mudança de estágio é decisão explícita do usuário, fora deste fluxo.
+4. Ausência não é fato. Se o despejo diz que um assunto não foi tratado ("preço
+   eu nem toquei", "não pedi shadowing"), o campo fica vazio e vira
+   open_question. Nunca existe fato dizendo que algo não foi falado.
 
 ## Endpoints
 

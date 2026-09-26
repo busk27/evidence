@@ -4,6 +4,7 @@ import {
   type FactConfidence,
   type ProfileField,
 } from "@/lib/domain";
+import { isAbsenceStatement } from "./absence";
 
 export type ExtractedFact = {
   field: ProfileField;
@@ -27,6 +28,9 @@ export type QuestionToRecord = {
 export type ClassifyResult = {
   factsToRecord: FactToRecord[];
   fieldsRejectedAsQuestions: QuestionToRecord[];
+  // Regra 4: campos cujo "fato" era só a ausência do assunto na conversa.
+  // Ficam vazios e entram na lista de campos a perguntar.
+  fieldsLeftEmpty: ProfileField[];
 };
 
 const REJECTION_QUESTION: Record<string, string> = {
@@ -37,7 +41,7 @@ const REJECTION_QUESTION: Record<string, string> = {
 };
 
 /**
- * Aplica as três regras de negócio do CLAUDE.md sobre os fatos que o modelo
+ * Aplica as regras de negócio do CLAUDE.md sobre os fatos que o modelo
  * extraiu. Fatos rejeitados por essas regras não são descartados — viram
  * pergunta para a próxima conversa (open_questions), nunca linha em facts.
  */
@@ -46,8 +50,16 @@ export function classifyExtractedFacts(
 ): ClassifyResult {
   const factsToRecord: FactToRecord[] = [];
   const fieldsRejectedAsQuestions: QuestionToRecord[] = [];
+  const fieldsLeftEmpty: ProfileField[] = [];
 
   for (const fact of facts) {
+    // Regra 4: ausência não é fato. "Não foi falado de preço" deixa o campo
+    // vazio, para ele continuar aparecendo como pergunta.
+    if (isAbsenceStatement(fact.statement)) {
+      if (!fieldsLeftEmpty.includes(fact.field)) fieldsLeftEmpty.push(fact.field);
+      continue;
+    }
+
     // Regra 2: gargalo_frase_literal exige verbatim preenchido.
     if (
       fact.field === VERBATIM_REQUIRED_FIELD &&
@@ -77,5 +89,5 @@ export function classifyExtractedFacts(
     });
   }
 
-  return { factsToRecord, fieldsRejectedAsQuestions };
+  return { factsToRecord, fieldsRejectedAsQuestions, fieldsLeftEmpty };
 }

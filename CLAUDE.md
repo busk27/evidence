@@ -28,7 +28,7 @@ e `/openapi.json` existem para que esse agente use a API sem ler código.
 
 ## Regras de negócio (não vivem no prompt do modelo — vivem no backend, têm teste)
 
-Estas três regras são o diferencial técnico do projeto. Não podem se perder numa
+Estas quatro regras são o diferencial técnico do projeto. Não podem se perder numa
 refatoração. Testes cobrindo cada uma ficam em `src/lib/facts/*.test.ts` (ou
 equivalente) e devem continuar passando.
 
@@ -40,10 +40,18 @@ equivalente) e devem continuar passando.
    Razão: número que veio de terceiro não é evidência.
 2. **`gargalo_frase_literal` exige `verbatim` preenchido.** Sem a frase literal, o
    campo fica vazio e vira `open_question`. Paráfrase é o que transforma conversa
-   boa em falso positivo.
+   boa em falso positivo. `verbatim` só vale se o despejo marca o trecho como fala
+   do interlocutor (aspas, ou logo depois de "ele disse que", "ele falou assim",
+   "nas palavras dele", "com essas palavras"); senão o backend zera o verbatim
+   antes da regra rodar (`src/lib/facts/verbatim.ts`). Anotação do autor não é
+   citação.
 3. **Nada que o modelo extrair pode alterar `firms.stage`.** Mudança de estágio é
    ação explícita do usuário via endpoint dedicado, nunca inferência a partir do
    texto da conversa.
+4. **Ausência não é fato.** Quando o despejo diz que um assunto não foi tratado
+   ("preço eu nem toquei", "não pedi shadowing", "não quis falar do volume"), o
+   campo fica vazio e vira `open_question`. Nunca grava fato dizendo que algo não
+   foi falado (`src/lib/facts/absence.ts`).
 
 ## Vocabulário controlado (enums)
 

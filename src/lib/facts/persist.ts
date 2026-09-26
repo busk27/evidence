@@ -1,6 +1,7 @@
 import type { Extraction } from "@/lib/extraction/schema";
 import type { ProfileField } from "@/lib/domain";
 import { classifyExtractedFacts, type QuestionToRecord } from "./classify";
+import { keepOnlyMarkedVerbatim } from "./verbatim";
 
 export type FactRow = {
   field: ProfileField;
@@ -53,19 +54,26 @@ export function buildOpenQuestions(
 
 /**
  * Aplica as regras de negócio (classify) e monta as linhas prontas para
- * inserir em facts/open_questions. Função pura — nenhuma chamada a rede ou
+ * inserir em facts/open_questions. Antes, zera todo verbatim que o despejo não
+ * marca como fala (aspas ou "ele disse que"...), para a regra 2 não aprovar
+ * paráfrase como citação. Função pura — nenhuma chamada a rede ou
  * banco aqui. Nunca produz nada que escreva em firms.stage (regra 3): o
  * retorno não tem esse campo, estruturalmente.
  */
-export function prepareWrite(extraction: Extraction): PreparedWrite {
-  const { factsToRecord, fieldsRejectedAsQuestions } = classifyExtractedFacts(
-    extraction.facts
-  );
+export function prepareWrite(
+  extraction: Extraction,
+  rawDump: string
+): PreparedWrite {
+  const { factsToRecord, fieldsRejectedAsQuestions, fieldsLeftEmpty } =
+    classifyExtractedFacts(keepOnlyMarkedVerbatim(extraction.facts, rawDump));
 
   return {
     factsToInsert: factsToRecord,
     openQuestionsToInsert: buildOpenQuestions(
-      extraction,
+      {
+        still_empty: [...extraction.still_empty, ...fieldsLeftEmpty],
+        next_questions: extraction.next_questions,
+      },
       fieldsRejectedAsQuestions,
       new Set(factsToRecord.map((fact) => fact.field))
     ),

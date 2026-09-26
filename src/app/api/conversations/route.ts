@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { factsToInsert, openQuestionsToInsert } = prepareWrite(extraction);
+  const { factsToInsert, openQuestionsToInsert } = prepareWrite(extraction, raw_dump);
 
   const factsRecorded = factsToInsert.length
     ? await supabase

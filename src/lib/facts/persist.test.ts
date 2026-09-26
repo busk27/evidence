@@ -75,6 +75,50 @@ describe("buildOpenQuestions", () => {
   });
 });
 
+describe("prepareWrite — P1 e regra 4 juntos, no caso da Ática", () => {
+  const dump = `o que mais dói pra ele é organizar os documentos e filtrar o que serve.
+isso aqui eu tô escrevendo do que lembro, não peguei a frase exata dele.
+preço eu nem cheguei a tocar.`;
+
+  const result = prepareWrite(
+    {
+      facts: [
+        {
+          field: "gargalo_frase_literal",
+          statement: "O gargalo é organizar documentos e filtrar o que serve.",
+          verbatim: "organizar os documentos e filtrar o que serve",
+          confidence: "stated",
+        },
+        {
+          field: "preco_testado",
+          statement: "O preço não foi abordado na reunião.",
+          verbatim: null,
+          confidence: "stated",
+        },
+      ],
+      still_empty: [],
+      next_questions: [
+        { field: "preco_testado", question: "Quanto você pagaria por mês por isso?" },
+      ],
+    },
+    dump
+  );
+
+  it("anotação do autor marcada como verbatim não passa pela regra 2", () => {
+    expect(result.factsToInsert).toEqual([]);
+    expect(result.openQuestionsToInsert.map((q) => q.field)).toContain(
+      "gargalo_frase_literal"
+    );
+  });
+
+  it("ausência vira pergunta, usando a pergunta do modelo para o campo", () => {
+    expect(result.openQuestionsToInsert).toContainEqual({
+      field: "preco_testado",
+      question: "Quanto você pagaria por mês por isso?",
+    });
+  });
+});
+
 describe("prepareWrite — regra 3: nada aqui consegue alterar firms.stage", () => {
   const extraction: Extraction = {
     facts: [
@@ -92,7 +136,7 @@ describe("prepareWrite — regra 3: nada aqui consegue alterar firms.stage", () 
   };
 
   it("o retorno não tem propriedade stage em nenhum nível", () => {
-    const result = prepareWrite(extraction);
+    const result = prepareWrite(extraction, "despejo de teste");
 
     expect(JSON.stringify(result)).not.toMatch(/stage/i);
     expect(Object.keys(result)).toEqual([
@@ -109,7 +153,7 @@ describe("prepareWrite — regra 3: nada aqui consegue alterar firms.stage", () 
     });
 
     expect(JSON.stringify(parsed)).not.toMatch(/stage/i);
-    expect(JSON.stringify(prepareWrite(parsed))).not.toMatch(/stage/i);
+    expect(JSON.stringify(prepareWrite(parsed, "despejo de teste"))).not.toMatch(/stage/i);
   });
 
   it("fato de campo fora do vocabulário é rejeitado pelo schema", () => {
