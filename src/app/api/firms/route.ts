@@ -16,7 +16,8 @@ export async function GET(request: Request) {
   const supabase = getSupabaseServerClient();
 
   const [firmsRes, factsRes, questionsRes, conversationsRes] = await Promise.all([
-    supabase.from("firms").select("id, name, stage, country, size"),
+    // Firma hidden sai da lista e dos totais; continua abrindo por link direto.
+    supabase.from("firms").select("id, name, stage, country, size").eq("hidden", false),
     supabase.from("facts").select("firm_id").eq("status", "valid"),
     supabase.from("open_questions").select("firm_id").eq("status", "open"),
     supabase.from("conversations").select("firm_id, happened_on"),
@@ -60,8 +61,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     totals: {
       firms: firms.length,
-      facts: factsRes.data?.length ?? 0,
-      open_questions: questionsRes.data?.length ?? 0,
+      facts: firms.reduce((sum, firm) => sum + firm.facts_count, 0),
+      open_questions: firms.reduce((sum, firm) => sum + firm.open_questions_count, 0),
     },
     firms,
   });

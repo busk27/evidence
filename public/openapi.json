@@ -11,7 +11,7 @@
     "/api/firms": {
       "get": {
         "summary": "Lista as firmas com contagens e a data da conversa mais recente",
-        "description": "Por firma: dados cadastrais, quantidade de fatos válidos (status = valid), quantidade de perguntas abertas (status = open) e a data da conversa mais recente. Ordenado pela conversa mais recente; firma sem conversa vai para o fim. totals traz as somas prontas.",
+        "description": "Por firma: dados cadastrais, quantidade de fatos válidos (status = valid), quantidade de perguntas abertas (status = open) e a data da conversa mais recente. Ordenado pela conversa mais recente; firma sem conversa vai para o fim. totals traz as somas prontas. Firmas com hidden = true ficam fora da lista e dos totais, mas continuam abrindo em GET /api/firms/{id}.",
         "responses": {
           "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
