@@ -3,15 +3,17 @@
   "info": {
     "title": "Evidence API",
     "version": "0.1.0",
-    "description": "Registro de conversas de discovery B2B. Recebe o despejo de uma conversa, extrai fatos rastreáveis por origem e aponta os campos do perfil da firma que ainda estão vazios. Todo corpo de requisição deve ser JSON em UTF-8; corpo com bytes fora de UTF-8 ou com charset declarado diferente de utf-8 é recusado com 400, nunca gravado."
+    "description": "Registro de conversas de discovery B2B. Recebe o despejo de uma conversa, extrai fatos rastreáveis por origem e aponta os campos do perfil da firma que ainda estão vazios. Todo corpo de requisição deve ser JSON em UTF-8; corpo com bytes fora de UTF-8 ou com charset declarado diferente de utf-8 é recusado com 400, nunca gravado. Toda rota exige sessão do Supabase Auth; sem sessão, 401."
   },
   "servers": [{ "url": "/" }],
+  "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
   "paths": {
     "/api/firms": {
       "get": {
         "summary": "Lista as firmas com contagens e a data da conversa mais recente",
         "description": "Por firma: dados cadastrais, quantidade de fatos válidos (status = valid), quantidade de perguntas abertas (status = open) e a data da conversa mais recente. Ordenado pela conversa mais recente; firma sem conversa vai para o fim. totals traz as somas prontas.",
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Lista de firmas.",
             "content": {
@@ -34,6 +36,7 @@
           }
         },
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "201": {
             "description": "Firma (e contato, se enviado) gravados.",
             "content": {
@@ -60,6 +63,7 @@
           }
         },
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "201": {
             "description": "Conversa gravada. Fatos e/ou perguntas em aberto extraídos.",
             "content": {
@@ -86,6 +90,7 @@
           }
         ],
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Perfil da firma.",
             "content": {
@@ -110,6 +115,7 @@
           }
         ],
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Lista de perguntas com status open.",
             "content": {
@@ -148,6 +154,7 @@
           }
         },
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Fato marcado como errado. open_question vem null se o campo ainda tem fato válido ou já tinha pergunta aberta.",
             "content": {
@@ -196,6 +203,7 @@
           }
         },
         "responses": {
+          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "201": {
             "description": "Original marcado como errado e versão certa gravada.",
             "content": {
@@ -223,6 +231,10 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "Access token do Supabase Auth. Obtenha com POST {SUPABASE_URL}/auth/v1/token?grant_type=password, corpo { email, password }, cabeçalho apikey com a chave publicável." },
+      "cookieAuth": { "type": "apiKey", "in": "cookie", "name": "sb-<project_ref>-auth-token", "description": "Sessão do navegador, criada pela página /login." }
+    },
     "schemas": {
       "ProfileField": {
         "type": "string",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SignOutButton } from "./sign-out-button";
 
 type FactRecorded = {
   id: string;
@@ -76,12 +77,15 @@ export default function Home() {
             <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
               Evidence
             </h1>
-            <Link
-              href="/firms"
-              className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
-            >
-              Ver firmas →
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/firms"
+                className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
+              >
+                Ver firmas →
+              </Link>
+              <SignOutButton />
+            </div>
           </div>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Despeja a conversa. A gente extrai os fatos e diz o que ainda falta

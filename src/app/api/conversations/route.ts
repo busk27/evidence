@@ -6,6 +6,7 @@ import { prepareWrite } from "@/lib/facts/persist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
 import { readJsonBody } from "@/lib/api/read-json";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,9 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const read = await readJsonBody(request);
   if (!read.ok) return read.response;
   const body = read.body;

@@ -10,6 +10,21 @@ para que um agente use a API sem ler o código-fonte.
 
 Especificação completa (OpenAPI 3.1): /openapi.json
 
+## Autenticação
+
+Toda rota /api/* exige sessão válida do Supabase Auth (e-mail e senha). Sem
+sessão, ou com token inválido/expirado, a resposta é 401 { error } e nenhum
+dado. Não existe cadastro pela API nem pelo site: usuários são criados no
+painel do Supabase.
+
+- Navegador: a sessão vai em cookie, criada pela página /login.
+- Agente ou terminal: mande o access token do Supabase Auth no cabeçalho
+  Authorization: Bearer <access_token>. O token sai de
+  POST {SUPABASE_URL}/auth/v1/token?grant_type=password com { email, password }
+  e o cabeçalho apikey: <chave publicável do projeto>.
+
+Este arquivo e /openapi.json são públicos: descrevem a API, não trazem dado.
+
 ## Vocabulário controlado
 
 `firms.stage` (só muda por ação explícita do usuário, nunca por inferência de
@@ -97,7 +112,7 @@ Resposta 201: { original, fact }.
   texto corrompido. No Windows, mande o corpo a partir de arquivo UTF-8
   (curl --data-binary @corpo.json) em vez de JSON inline no terminal.
 - Toda resposta é JSON. Erros vêm como { error, details? } com o status HTTP
-  correspondente (400 corpo inválido, 404 recurso não encontrado, 502 falha no
+  correspondente (400 corpo inválido, 401 sem sessão, 404 recurso não encontrado, 502 falha no
   o modelo, 500 erro interno).
 - Contatos só são criados junto com a firma (POST /api/firms). Não existe
   (ainda) endpoint para adicionar contato a firma existente nem para mudar

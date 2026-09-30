@@ -7,6 +7,7 @@ import { readJsonBody } from "@/lib/api/read-json";
 import { retractSchema } from "@/lib/facts/revise";
 import { FIELD_QUESTIONS } from "@/lib/facts/questions";
 import { publicFact, rpcError, type FactRow } from "@/lib/facts/revise-db";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ export async function POST(
   request: NextRequest,
   ctx: RouteContext<"/api/facts/[id]/retract">
 ) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const { id } = await ctx.params;
   if (!z.uuid().safeParse(id).success) return jsonError(400, "id do fato precisa ser um uuid.");
 

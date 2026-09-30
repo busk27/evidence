@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { SignOutButton } from "../../sign-out-button";
 import {
   FACT_CONFIDENCE_LABELS,
   fieldLabel,
@@ -168,12 +169,15 @@ export default function FirmPage() {
   return (
     <div className="flex flex-1 flex-col bg-zinc-50 dark:bg-black">
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
-        <Link
-          href="/"
-          className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
-        >
-          ← Novo despejo
-        </Link>
+        <div className="flex items-center justify-between gap-4">
+          <Link
+            href="/"
+            className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
+          >
+            ← Novo despejo
+          </Link>
+          <SignOutButton />
+        </div>
 
         {loading && <p className="text-sm text-zinc-500">Carregando...</p>}
 

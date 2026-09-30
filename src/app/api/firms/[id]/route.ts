@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,12 @@ function wrongFact(fact: FactRecord) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/firms/[id]">
 ) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const { id } = await ctx.params;
   const supabase = getSupabaseServerClient();
 

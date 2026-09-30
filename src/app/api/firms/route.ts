@@ -3,12 +3,16 @@ import { createFirmSchema } from "@/lib/firms/create";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
 import { readJsonBody } from "@/lib/api/read-json";
+import { requireUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 // Lista de firmas com a contagem de fatos válidos, de perguntas abertas e a
 // data da conversa mais recente. Os totais vêm prontos para a tela não somar.
-export async function GET() {
+export async function GET(request: Request) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const supabase = getSupabaseServerClient();
 
   const [firmsRes, factsRes, questionsRes, conversationsRes] = await Promise.all([
@@ -64,6 +68,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireUser(request);
+  if (denied) return denied;
+
   const read = await readJsonBody(request);
   if (!read.ok) return read.response;
   const body = read.body;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SignOutButton } from "../sign-out-button";
 
 type FirmSummary = {
   id: string;
@@ -90,12 +91,15 @@ export default function FirmsPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
             Evidence
           </h1>
-          <Link
-            href="/"
-            className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
-          >
-            + Novo despejo
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
+            >
+              + Novo despejo
+            </Link>
+            <SignOutButton />
+          </div>
         </header>
 
         {loading && <p className="text-sm text-zinc-500">Carregando...</p>}
