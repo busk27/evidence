@@ -45,6 +45,12 @@ acesso_data_room, proximo_passo.
 
 ## Endpoints
 
+### GET /api/firms
+Lista as firmas: { totals: { firms, facts, open_questions }, firms: [...] }.
+Cada firma traz id, name, stage, country, size, facts_count (fatos válidos),
+open_questions_count (perguntas com status = open) e last_conversation_on
+(data da conversa mais recente, ou null). Ordena pela conversa mais recente.
+
 ### POST /api/firms
 Cria uma firma, opcionalmente com um contato. Corpo: { name, country?, size?,
 contact?: { name, role?, email? } }. Toda firma nasce com stage =

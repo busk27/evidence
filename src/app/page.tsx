@@ -72,9 +72,17 @@ export default function Home() {
     <div className="flex flex-1 flex-col bg-zinc-50 dark:bg-black">
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
         <header>
-          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            Evidence
-          </h1>
+          <div className="flex items-baseline justify-between gap-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+              Evidence
+            </h1>
+            <Link
+              href="/firms"
+              className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
+            >
+              Ver firmas →
+            </Link>
+          </div>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Despeja a conversa. A gente extrai os fatos e diz o que ainda falta
             saber.

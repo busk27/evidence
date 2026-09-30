@@ -6,6 +6,63 @@ import { readJsonBody } from "@/lib/api/read-json";
 
 export const dynamic = "force-dynamic";
 
+// Lista de firmas com a contagem de fatos válidos, de perguntas abertas e a
+// data da conversa mais recente. Os totais vêm prontos para a tela não somar.
+export async function GET() {
+  const supabase = getSupabaseServerClient();
+
+  const [firmsRes, factsRes, questionsRes, conversationsRes] = await Promise.all([
+    supabase.from("firms").select("id, name, stage, country, size"),
+    supabase.from("facts").select("firm_id").eq("status", "valid"),
+    supabase.from("open_questions").select("firm_id").eq("status", "open"),
+    supabase.from("conversations").select("firm_id, happened_on"),
+  ]);
+
+  const failed = [firmsRes, factsRes, questionsRes, conversationsRes].find((r) => r.error);
+  if (failed?.error) return jsonError(500, "Erro ao listar as firmas.", failed.error.message);
+
+  const count = (rows: { firm_id: string }[]) => {
+    const byFirm = new Map<string, number>();
+    for (const row of rows) byFirm.set(row.firm_id, (byFirm.get(row.firm_id) ?? 0) + 1);
+    return byFirm;
+  };
+  const facts = count(factsRes.data ?? []);
+  const questions = count(questionsRes.data ?? []);
+
+  const lastConversation = new Map<string, string>();
+  for (const { firm_id, happened_on } of conversationsRes.data ?? []) {
+    const current = lastConversation.get(firm_id);
+    if (!current || happened_on > current) lastConversation.set(firm_id, happened_on);
+  }
+
+  const firms = (firmsRes.data ?? [])
+    .map((firm) => ({
+      id: firm.id,
+      name: firm.name,
+      stage: firm.stage,
+      country: firm.country,
+      size: firm.size,
+      facts_count: facts.get(firm.id) ?? 0,
+      open_questions_count: questions.get(firm.id) ?? 0,
+      last_conversation_on: lastConversation.get(firm.id) ?? null,
+    }))
+    // Conversa mais recente primeiro; firma sem conversa vai para o fim.
+    .sort(
+      (a, b) =>
+        (b.last_conversation_on ?? "").localeCompare(a.last_conversation_on ?? "") ||
+        a.name.localeCompare(b.name, "pt-BR")
+    );
+
+  return NextResponse.json({
+    totals: {
+      firms: firms.length,
+      facts: factsRes.data?.length ?? 0,
+      open_questions: questionsRes.data?.length ?? 0,
+    },
+    firms,
+  });
+}
+
 export async function POST(request: NextRequest) {
   const read = await readJsonBody(request);
   if (!read.ok) return read.response;

@@ -8,6 +8,20 @@
   "servers": [{ "url": "/" }],
   "paths": {
     "/api/firms": {
+      "get": {
+        "summary": "Lista as firmas com contagens e a data da conversa mais recente",
+        "description": "Por firma: dados cadastrais, quantidade de fatos válidos (status = valid), quantidade de perguntas abertas (status = open) e a data da conversa mais recente. Ordenado pela conversa mais recente; firma sem conversa vai para o fim. totals traz as somas prontas.",
+        "responses": {
+          "200": {
+            "description": "Lista de firmas.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FirmList" }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "summary": "Cria uma firma, opcionalmente com um contato",
         "description": "Toda firma nasce com stage = nao-contatada. O corpo não aceita stage nem nenhuma chave fora do schema (400).",
@@ -419,6 +433,35 @@
           "status_reason": { "type": ["string", "null"], "description": "Por que foi marcado como errado." },
           "status_changed_at": { "type": ["string", "null"], "format": "date-time" },
           "source": { "$ref": "#/components/schemas/FactSource" }
+        }
+      },
+      "FirmList": {
+        "type": "object",
+        "properties": {
+          "totals": {
+            "type": "object",
+            "properties": {
+              "firms": { "type": "integer" },
+              "facts": { "type": "integer", "description": "Fatos válidos em todas as firmas." },
+              "open_questions": { "type": "integer", "description": "Perguntas abertas em todas as firmas." }
+            }
+          },
+          "firms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "name": { "type": "string" },
+                "stage": { "$ref": "#/components/schemas/FirmStage" },
+                "country": { "type": ["string", "null"] },
+                "size": { "type": ["string", "null"] },
+                "facts_count": { "type": "integer", "description": "Fatos válidos (status = valid)." },
+                "open_questions_count": { "type": "integer", "description": "Perguntas com status = open." },
+                "last_conversation_on": { "type": ["string", "null"], "format": "date", "description": "Data da conversa mais recente; null se nenhuma." }
+              }
+            }
+          }
         }
       },
       "OpenQuestionsList": {
