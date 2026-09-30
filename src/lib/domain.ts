@@ -38,9 +38,42 @@ export const PROFILE_FIELDS = [
 
 export type ProfileField = (typeof PROFILE_FIELDS)[number];
 
+// Rótulo legível de cada campo, para a tela.
+export const PROFILE_FIELD_LABELS: Record<ProfileField, string> = {
+  interlocutor: "Interlocutor",
+  decisor_ou_operador: "Decisor ou operador",
+  quem_opera_dd: "Quem opera a DD",
+  origem_do_contato: "Origem do contato",
+  tamanho_praca_cliente: "Tamanho da praça do cliente",
+  volume_dd: "Volume de DD",
+  entregavel_final: "Entregável final",
+  quem_faz_preparacao_hoje: "Quem faz a preparação hoje",
+  ia_em_uso: "IA em uso",
+  gargalo_frase_literal: "Gargalo (frase literal)",
+  horas_do_gargalo_por_projeto: "Horas do gargalo por projeto",
+  de_quem_sao_as_horas: "De quem são as horas",
+  projetos_por_mes: "Projetos por mês",
+  destino_da_hora_economizada: "Destino da hora economizada",
+  preco_testado: "Preço testado",
+  reacao_ao_preco: "Reação ao preço",
+  objecao_principal: "Objeção principal",
+  shadowing: "Shadowing",
+  acesso_data_room: "Acesso ao data room",
+  proximo_passo: "Próximo passo",
+};
+
+export function fieldLabel(field: string): string {
+  return isProfileField(field) ? PROFILE_FIELD_LABELS[field] : field;
+}
+
 export const FACT_CONFIDENCE = ["stated", "reported"] as const;
 
 export type FactConfidence = (typeof FACT_CONFIDENCE)[number];
+
+export const FACT_CONFIDENCE_LABELS: Record<FactConfidence, string> = {
+  stated: "dito pelo interlocutor",
+  reported: "relato de terceiro",
+};
 
 export const OPEN_QUESTION_STATUS = ["open", "answered", "dropped"] as const;
 

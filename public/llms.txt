@@ -59,8 +59,10 @@ exatamente o que gravou: { conversation, facts_recorded, open_questions_recorded
 
 ### GET /api/firms/{id}
 Perfil da firma: dados cadastrais + todos os fatos válidos, cada um com a
-origem (conversation_id e data da conversa que o gerou). Fato marcado como
-errado não aparece; fato que corrige outro traz corrects_fact_id.
+origem (conversation_id e data da conversa que o gerou). Fato que corrige
+outro traz corrects_fact_id e, em replaces, as versões antigas (texto, motivo
+e data da correção). Fato marcado como errado sem versão certa sai de facts e
+aparece em retracted_facts, com o motivo — evidência nunca some.
 
 ### GET /api/firms/{id}/open-questions
 Perguntas em aberto (status = open) para essa firma — o que ainda falta saber,

@@ -365,7 +365,7 @@
           },
           "facts": {
             "type": "array",
-            "description": "Só fatos válidos. Fatos marcados como errados não aparecem.",
+            "description": "Só fatos válidos. Versões erradas aparecem em replaces (se foram corrigidas) ou em retracted_facts (se não foram).",
             "items": {
               "type": "object",
               "properties": {
@@ -375,16 +375,50 @@
                 "verbatim": { "type": ["string", "null"] },
                 "confidence": { "$ref": "#/components/schemas/FactConfidence" },
                 "corrects_fact_id": { "type": ["string", "null"], "format": "uuid", "description": "Se este fato é a correção de outro, o id do original (marcado como errado)." },
-                "source": {
-                  "type": "object",
-                  "properties": {
-                    "conversation_id": { "type": "string", "format": "uuid" },
-                    "happened_on": { "type": ["string", "null"], "format": "date" }
-                  }
-                }
+                "replaces": {
+                  "type": "array",
+                  "description": "Versões anteriores que este fato substituiu, da mais recente para a mais antiga. Cada uma está marcada como errada e traz o motivo.",
+                  "items": { "$ref": "#/components/schemas/WrongFact" }
+                },
+                "source": { "$ref": "#/components/schemas/FactSource" }
               }
             }
+          },
+          "retracted_facts": {
+            "type": "array",
+            "description": "Fatos marcados como errados que nenhuma versão certa substituiu. Continuam visíveis, com o motivo.",
+            "items": {
+              "allOf": [
+                { "$ref": "#/components/schemas/WrongFact" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "replaces": { "type": "array", "items": { "$ref": "#/components/schemas/WrongFact" } }
+                  }
+                }
+              ]
+            }
           }
+        }
+      },
+      "FactSource": {
+        "type": "object",
+        "properties": {
+          "conversation_id": { "type": "string", "format": "uuid" },
+          "happened_on": { "type": ["string", "null"], "format": "date" }
+        }
+      },
+      "WrongFact": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "field": { "$ref": "#/components/schemas/ProfileField" },
+          "statement": { "type": "string" },
+          "verbatim": { "type": ["string", "null"] },
+          "confidence": { "$ref": "#/components/schemas/FactConfidence" },
+          "status_reason": { "type": ["string", "null"], "description": "Por que foi marcado como errado." },
+          "status_changed_at": { "type": ["string", "null"], "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/FactSource" }
         }
       },
       "OpenQuestionsList": {
