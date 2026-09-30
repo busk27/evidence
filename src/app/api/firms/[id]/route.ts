@@ -15,6 +15,8 @@ type FactRecord = {
   status_reason: string | null;
   status_changed_at: string | null;
   corrects_fact_id: string | null;
+  thesis_signal: string | null;
+  thesis_reason: string | null;
   conversation_id: string;
   conversations: unknown;
 };
@@ -65,7 +67,7 @@ export async function GET(
   const { data, error: factsError } = await supabase
     .from("facts")
     .select(
-      "id, field, statement, verbatim, confidence, status, status_reason, status_changed_at, created_at, conversation_id, corrects_fact_id, conversations(happened_on)"
+      "id, field, statement, verbatim, confidence, status, status_reason, status_changed_at, created_at, conversation_id, corrects_fact_id, thesis_signal, thesis_reason, conversations(happened_on)"
     )
     .eq("firm_id", id)
     .order("created_at", { ascending: true });
@@ -107,6 +109,8 @@ export async function GET(
       verbatim: fact.verbatim,
       confidence: fact.confidence,
       corrects_fact_id: fact.corrects_fact_id,
+      thesis_signal: fact.thesis_signal,
+      thesis_reason: fact.thesis_reason,
       replaces: chain(fact),
       source: source(fact),
     })),

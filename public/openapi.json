@@ -5,22 +5,37 @@
     "version": "0.1.0",
     "description": "Registro de conversas de discovery B2B. Recebe o despejo de uma conversa, extrai fatos rastreáveis por origem e aponta os campos do perfil da firma que ainda estão vazios. Todo corpo de requisição deve ser JSON em UTF-8; corpo com bytes fora de UTF-8 ou com charset declarado diferente de utf-8 é recusado com 400, nunca gravado. Toda rota exige sessão do Supabase Auth; sem sessão, 401."
   },
-  "servers": [{ "url": "/" }],
-  "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    },
+    {
+      "cookieAuth": []
+    }
+  ],
   "paths": {
     "/api/firms": {
       "get": {
         "summary": "Lista as firmas com contagens e a data da conversa mais recente",
         "description": "Por firma: dados cadastrais, quantidade de fatos válidos (status = valid), quantidade de perguntas abertas (status = open) e a data da conversa mais recente. Ordenado pela conversa mais recente; firma sem conversa vai para o fim. totals traz as somas prontas. Firmas com hidden = true ficam fora da lista e dos totais, mas continuam abrindo em GET /api/firms/{id}.",
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Lista de firmas.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/FirmList" }
+                "schema": {
+                  "$ref": "#/components/schemas/FirmList"
+                }
               }
             }
+          },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
           }
         }
       },
@@ -31,22 +46,32 @@
           "required": true,
           "content": {
             "application/json; charset=utf-8": {
-              "schema": { "$ref": "#/components/schemas/FirmInput" }
+              "schema": {
+                "$ref": "#/components/schemas/FirmInput"
+              }
             }
           }
         },
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "201": {
             "description": "Firma (e contato, se enviado) gravados.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/FirmCreated" }
+                "schema": {
+                  "$ref": "#/components/schemas/FirmCreated"
+                }
               }
             }
           },
-          "400": { "description": "Corpo da requisição inválido: fora de UTF-8, charset diferente de utf-8, JSON malformado, ou fora do schema (inclui tentativa de enviar stage)." },
-          "500": { "description": "Erro ao gravar. Se a firma foi gravada e o contato não, o firm_id vem em details." }
+          "400": {
+            "description": "Corpo da requisição inválido: fora de UTF-8, charset diferente de utf-8, JSON malformado, ou fora do schema (inclui tentativa de enviar stage)."
+          },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          },
+          "500": {
+            "description": "Erro ao gravar. Se a firma foi gravada e o contato não, o firm_id vem em details."
+          }
         }
       }
     },
@@ -58,23 +83,35 @@
           "required": true,
           "content": {
             "application/json; charset=utf-8": {
-              "schema": { "$ref": "#/components/schemas/ConversationInput" }
+              "schema": {
+                "$ref": "#/components/schemas/ConversationInput"
+              }
             }
           }
         },
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "201": {
             "description": "Conversa gravada. Fatos e/ou perguntas em aberto extraídos.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ConversationResult" }
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResult"
+                }
               }
             }
           },
-          "400": { "description": "Corpo da requisição inválido: fora de UTF-8, charset diferente de utf-8, JSON malformado, ou fora do schema." },
-          "404": { "description": "firm_id ou contact_id não encontrado." },
-          "502": { "description": "Falha ao extrair fatos com o modelo. A conversa já foi gravada; o conversation_id vem em details." }
+          "400": {
+            "description": "Corpo da requisição inválido: fora de UTF-8, charset diferente de utf-8, JSON malformado, ou fora do schema."
+          },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          },
+          "404": {
+            "description": "firm_id ou contact_id não encontrado."
+          },
+          "502": {
+            "description": "Falha ao extrair fatos com o modelo. A conversa já foi gravada; o conversation_id vem em details."
+          }
         }
       }
     },
@@ -86,20 +123,29 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Perfil da firma.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/FirmProfile" }
+                "schema": {
+                  "$ref": "#/components/schemas/FirmProfile"
+                }
               }
             }
           },
-          "404": { "description": "Firma não encontrada." }
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          },
+          "404": {
+            "description": "Firma não encontrada."
+          }
         }
       }
     },
@@ -111,20 +157,29 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "format": "uuid" }
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Lista de perguntas com status open.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/OpenQuestionsList" }
+                "schema": {
+                  "$ref": "#/components/schemas/OpenQuestionsList"
+                }
               }
             }
           },
-          "404": { "description": "Firma não encontrada." }
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          },
+          "404": {
+            "description": "Firma não encontrada."
+          }
         }
       }
     },
@@ -154,7 +209,6 @@
           }
         },
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "200": {
             "description": "Fato marcado como errado. open_question vem null se o campo ainda tem fato válido ou já tinha pergunta aberta.",
             "content": {
@@ -167,6 +221,9 @@
           },
           "400": {
             "description": "id não é uuid, ou corpo inválido (fora de UTF-8, JSON malformado, reason vazio, chave fora do schema)."
+          },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
           },
           "404": {
             "description": "Fato não encontrado."
@@ -203,7 +260,6 @@
           }
         },
         "responses": {
-          "401": { "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum." },
           "201": {
             "description": "Original marcado como errado e versão certa gravada.",
             "content": {
@@ -217,6 +273,9 @@
           "400": {
             "description": "id não é uuid, ou corpo inválido (fora de UTF-8, JSON malformado, chave fora do schema, inclusive field ou stage)."
           },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          },
           "404": {
             "description": "Fato não encontrado."
           },
@@ -228,12 +287,102 @@
           }
         }
       }
+    },
+    "/api/thesis": {
+      "get": {
+        "summary": "A tese do usuário",
+        "responses": {
+          "200": {
+            "description": "Tese salva, ou null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "thesis": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/components/schemas/Thesis"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          }
+        }
+      },
+      "put": {
+        "summary": "Salva a tese do usuário",
+        "description": "Uma tese só. As conversas gravadas depois disso são lidas por ela.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tese salva.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "thesis": {
+                      "$ref": "#/components/schemas/Thesis"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo inválido."
+          },
+          "401": {
+            "description": "Sem sessão válida (sem cookie, token ausente, inválido ou expirado). Não devolve dado nenhum."
+          }
+        }
+      }
     }
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT", "description": "Access token do Supabase Auth. Obtenha com POST {SUPABASE_URL}/auth/v1/token?grant_type=password, corpo { email, password }, cabeçalho apikey com a chave publicável." },
-      "cookieAuth": { "type": "apiKey", "in": "cookie", "name": "sb-<project_ref>-auth-token", "description": "Sessão do navegador, criada pela página /login." }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token do Supabase Auth. Obtenha com POST {SUPABASE_URL}/auth/v1/token?grant_type=password, corpo { email, password }, cabeçalho apikey com a chave publicável."
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb-<project_ref>-auth-token",
+        "description": "Sessão do navegador, criada pela página /login."
+      }
     },
     "schemas": {
       "ProfileField": {
@@ -276,25 +425,59 @@
       },
       "FactConfidence": {
         "type": "string",
-        "enum": ["stated", "reported"],
+        "enum": [
+          "stated",
+          "reported"
+        ],
         "description": "stated: dito diretamente por quem vive o fato. reported: repassado por terceiro. Campos de custo (horas_do_gargalo_por_projeto, de_quem_sao_as_horas, projetos_por_mes, destino_da_hora_economizada) só gravam com stated."
       },
       "FirmInput": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
-          "name": { "type": "string", "minLength": 1 },
-          "country": { "type": ["string", "null"] },
-          "size": { "type": ["string", "null"] },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "contact": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "properties": {
-              "name": { "type": "string", "minLength": 1 },
-              "role": { "type": ["string", "null"] },
-              "email": { "type": ["string", "null"], "format": "email" }
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "email"
+              }
             }
           }
         }
@@ -305,34 +488,94 @@
           "firm": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "format": "uuid" },
-              "name": { "type": "string" },
-              "country": { "type": ["string", "null"] },
-              "size": { "type": ["string", "null"] },
-              "stage": { "$ref": "#/components/schemas/FirmStage" },
-              "created_at": { "type": "string", "format": "date-time" }
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "country": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "size": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "stage": {
+                "$ref": "#/components/schemas/FirmStage"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
             }
           },
           "contact": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "properties": {
-              "id": { "type": "string", "format": "uuid" },
-              "firm_id": { "type": "string", "format": "uuid" },
-              "name": { "type": "string" },
-              "role": { "type": ["string", "null"] },
-              "email": { "type": ["string", "null"] }
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "firm_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
             }
           }
         }
       },
       "ConversationInput": {
         "type": "object",
-        "required": ["firm_id", "raw_dump"],
+        "required": [
+          "firm_id",
+          "raw_dump"
+        ],
         "properties": {
-          "firm_id": { "type": "string", "format": "uuid" },
-          "contact_id": { "type": ["string", "null"], "format": "uuid" },
-          "happened_on": { "type": "string", "format": "date", "description": "YYYY-MM-DD, default hoje." },
-          "raw_dump": { "type": "string", "description": "Texto bruto da conversa, escrito ou ditado logo após a call." }
+          "firm_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contact_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "happened_on": {
+            "type": "string",
+            "format": "date",
+            "description": "YYYY-MM-DD, default hoje."
+          },
+          "raw_dump": {
+            "type": "string",
+            "description": "Texto bruto da conversa, escrito ou ditado logo após a call."
+          }
         }
       },
       "ConversationResult": {
@@ -341,11 +584,29 @@
           "conversation": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "format": "uuid" },
-              "firm_id": { "type": "string", "format": "uuid" },
-              "contact_id": { "type": ["string", "null"], "format": "uuid" },
-              "happened_on": { "type": "string", "format": "date" },
-              "created_at": { "type": "string", "format": "date-time" }
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "firm_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "contact_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "happened_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
             }
           },
           "facts_recorded": {
@@ -353,11 +614,25 @@
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string", "format": "uuid" },
-                "field": { "$ref": "#/components/schemas/ProfileField" },
-                "statement": { "type": "string" },
-                "verbatim": { "type": ["string", "null"] },
-                "confidence": { "$ref": "#/components/schemas/FactConfidence" }
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "field": {
+                  "$ref": "#/components/schemas/ProfileField"
+                },
+                "statement": {
+                  "type": "string"
+                },
+                "verbatim": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "confidence": {
+                  "$ref": "#/components/schemas/FactConfidence"
+                }
               }
             }
           },
@@ -366,10 +641,24 @@
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string", "format": "uuid" },
-                "field": { "$ref": "#/components/schemas/ProfileField" },
-                "question": { "type": "string" },
-                "status": { "type": "string", "enum": ["open", "answered", "dropped"] }
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "field": {
+                  "$ref": "#/components/schemas/ProfileField"
+                },
+                "question": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "answered",
+                    "dropped"
+                  ]
+                }
               }
             }
           }
@@ -381,12 +670,32 @@
           "firm": {
             "type": "object",
             "properties": {
-              "id": { "type": "string", "format": "uuid" },
-              "name": { "type": "string" },
-              "country": { "type": ["string", "null"] },
-              "size": { "type": ["string", "null"] },
-              "stage": { "$ref": "#/components/schemas/FirmStage" },
-              "created_at": { "type": "string", "format": "date-time" }
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "country": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "size": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "stage": {
+                "$ref": "#/components/schemas/FirmStage"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
             }
           },
           "facts": {
@@ -395,18 +704,53 @@
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string", "format": "uuid" },
-                "field": { "$ref": "#/components/schemas/ProfileField" },
-                "statement": { "type": "string" },
-                "verbatim": { "type": ["string", "null"] },
-                "confidence": { "$ref": "#/components/schemas/FactConfidence" },
-                "corrects_fact_id": { "type": ["string", "null"], "format": "uuid", "description": "Se este fato é a correção de outro, o id do original (marcado como errado)." },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "field": {
+                  "$ref": "#/components/schemas/ProfileField"
+                },
+                "statement": {
+                  "type": "string"
+                },
+                "verbatim": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "confidence": {
+                  "$ref": "#/components/schemas/FactConfidence"
+                },
+                "corrects_fact_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid",
+                  "description": "Se este fato é a correção de outro, o id do original (marcado como errado)."
+                },
                 "replaces": {
                   "type": "array",
                   "description": "Versões anteriores que este fato substituiu, da mais recente para a mais antiga. Cada uma está marcada como errada e traz o motivo.",
-                  "items": { "$ref": "#/components/schemas/WrongFact" }
+                  "items": {
+                    "$ref": "#/components/schemas/WrongFact"
+                  }
                 },
-                "source": { "$ref": "#/components/schemas/FactSource" }
+                "source": {
+                  "$ref": "#/components/schemas/FactSource"
+                },
+                "thesis_signal": {
+                  "$ref": "#/components/schemas/ThesisSignal"
+                },
+                "thesis_reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Começa com a hipótese citada (\"H2 — ...\"), uma frase. null quando thesis_signal é null."
+                }
               }
             }
           },
@@ -415,11 +759,18 @@
             "description": "Fatos marcados como errados que nenhuma versão certa substituiu. Continuam visíveis, com o motivo.",
             "items": {
               "allOf": [
-                { "$ref": "#/components/schemas/WrongFact" },
+                {
+                  "$ref": "#/components/schemas/WrongFact"
+                },
                 {
                   "type": "object",
                   "properties": {
-                    "replaces": { "type": "array", "items": { "$ref": "#/components/schemas/WrongFact" } }
+                    "replaces": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WrongFact"
+                      }
+                    }
                   }
                 }
               ]
@@ -430,21 +781,58 @@
       "FactSource": {
         "type": "object",
         "properties": {
-          "conversation_id": { "type": "string", "format": "uuid" },
-          "happened_on": { "type": ["string", "null"], "format": "date" }
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "happened_on": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
         }
       },
       "WrongFact": {
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "field": { "$ref": "#/components/schemas/ProfileField" },
-          "statement": { "type": "string" },
-          "verbatim": { "type": ["string", "null"] },
-          "confidence": { "$ref": "#/components/schemas/FactConfidence" },
-          "status_reason": { "type": ["string", "null"], "description": "Por que foi marcado como errado." },
-          "status_changed_at": { "type": ["string", "null"], "format": "date-time" },
-          "source": { "$ref": "#/components/schemas/FactSource" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "field": {
+            "$ref": "#/components/schemas/ProfileField"
+          },
+          "statement": {
+            "type": "string"
+          },
+          "verbatim": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/FactConfidence"
+          },
+          "status_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Por que foi marcado como errado."
+          },
+          "status_changed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "source": {
+            "$ref": "#/components/schemas/FactSource"
+          }
         }
       },
       "FirmList": {
@@ -453,9 +841,26 @@
           "totals": {
             "type": "object",
             "properties": {
-              "firms": { "type": "integer" },
-              "facts": { "type": "integer", "description": "Fatos válidos em todas as firmas." },
-              "open_questions": { "type": "integer", "description": "Perguntas abertas em todas as firmas." }
+              "firms": {
+                "type": "integer"
+              },
+              "facts": {
+                "type": "integer",
+                "description": "Fatos válidos em todas as firmas."
+              },
+              "open_questions": {
+                "type": "integer",
+                "description": "Perguntas abertas em todas as firmas."
+              },
+              "alinhado": {
+                "type": "integer"
+              },
+              "explorar": {
+                "type": "integer"
+              },
+              "atencao": {
+                "type": "integer"
+              }
             }
           },
           "firms": {
@@ -463,14 +868,59 @@
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string", "format": "uuid" },
-                "name": { "type": "string" },
-                "stage": { "$ref": "#/components/schemas/FirmStage" },
-                "country": { "type": ["string", "null"] },
-                "size": { "type": ["string", "null"] },
-                "facts_count": { "type": "integer", "description": "Fatos válidos (status = valid)." },
-                "open_questions_count": { "type": "integer", "description": "Perguntas com status = open." },
-                "last_conversation_on": { "type": ["string", "null"], "format": "date", "description": "Data da conversa mais recente; null se nenhuma." }
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "stage": {
+                  "$ref": "#/components/schemas/FirmStage"
+                },
+                "country": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "size": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "facts_count": {
+                  "type": "integer",
+                  "description": "Fatos válidos (status = valid)."
+                },
+                "open_questions_count": {
+                  "type": "integer",
+                  "description": "Perguntas com status = open."
+                },
+                "last_conversation_on": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date",
+                  "description": "Data da conversa mais recente; null se nenhuma."
+                },
+                "thesis_counts": {
+                  "type": "object",
+                  "properties": {
+                    "alinhado": {
+                      "type": "integer"
+                    },
+                    "explorar": {
+                      "type": "integer"
+                    },
+                    "atencao": {
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Fatos válidos por leitura de tese. Fato sem classificação não entra."
+                }
               }
             }
           }
@@ -479,17 +929,37 @@
       "OpenQuestionsList": {
         "type": "object",
         "properties": {
-          "firm_id": { "type": "string", "format": "uuid" },
+          "firm_id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "open_questions": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "id": { "type": "string", "format": "uuid" },
-                "field": { "$ref": "#/components/schemas/ProfileField" },
-                "question": { "type": "string" },
-                "status": { "type": "string", "enum": ["open", "answered", "dropped"] },
-                "created_at": { "type": "string", "format": "date-time" }
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "field": {
+                  "$ref": "#/components/schemas/ProfileField"
+                },
+                "question": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "answered",
+                    "dropped"
+                  ]
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
               }
             }
           }
@@ -638,6 +1108,31 @@
           },
           "fact": {
             "$ref": "#/components/schemas/RevisedFact"
+          }
+        }
+      },
+      "ThesisSignal": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "alinhado",
+          "explorar",
+          "atencao",
+          null
+        ],
+        "description": "Leitura do fato pela tese. null = sem relação com nenhuma hipótese."
+      },
+      "Thesis": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

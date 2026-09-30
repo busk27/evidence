@@ -7,9 +7,12 @@ import { SignOutButton } from "../../sign-out-button";
 import { AppHeader } from "../../app-header";
 import {
   FACT_CONFIDENCE_LABELS,
+  THESIS_SIGNAL_LABELS,
+  THESIS_SIGNALS,
   fieldLabel,
   stageLabel,
   type FactConfidence,
+  type ThesisSignal,
 } from "@/lib/domain";
 
 type Firm = {
@@ -23,28 +26,18 @@ type Firm = {
 
 type Source = { conversation_id: string; happened_on: string | null };
 
-type WrongFact = {
-  id: string;
-  field: string;
-  statement: string;
-  verbatim: string | null;
-  confidence: FactConfidence;
-  status_reason: string | null;
-  status_changed_at: string | null;
-  source: Source;
-};
-
+// Só a versão vigente de cada fato. A cadeia de correção continua no banco e
+// na API (replaces, retracted_facts), mas não aparece nesta tela.
 type Fact = {
   id: string;
   field: string;
   statement: string;
   verbatim: string | null;
   confidence: FactConfidence;
-  replaces: WrongFact[];
+  thesis_signal: ThesisSignal | null;
+  thesis_reason: string | null;
   source: Source;
 };
-
-type RetractedFact = WrongFact & { replaces: WrongFact[] };
 
 type OpenQuestion = {
   id: string;
@@ -53,62 +46,64 @@ type OpenQuestion = {
   status: string;
 };
 
+const SIGNAL_DOT: Record<ThesisSignal, string> = {
+  alinhado: "#34c759",
+  explorar: "#0071e3",
+  atencao: "#ff9500",
+};
+
 function formatDate(value: string | null) {
   if (!value) return null;
   const [y, m, d] = value.slice(0, 10).split("-");
   return `${d}/${m}/${y}`;
 }
 
-function FieldLabel({ field }: { field: string }) {
-  return <span className="type-caption font-semibold text-ink-2">{fieldLabel(field)}</span>;
-}
-
-function ConfidenceBadge({ confidence }: { confidence: FactConfidence }) {
+function FactCard({ fact }: { fact: Fact }) {
   return (
-    <span
-      className={`type-caption shrink-0 ${
-        confidence === "stated" ? "text-ink-3" : "text-accent"
-      }`}
-    >
-      {FACT_CONFIDENCE_LABELS[confidence] ?? confidence}
-    </span>
-  );
-}
-
-function Origin({ source }: { source: Source }) {
-  if (!source.happened_on) return null;
-  return (
-    <p className="type-callout mt-3 text-ink-2">
-      origem: conversa de {formatDate(source.happened_on)}
-    </p>
-  );
-}
-
-// Versão antiga de um fato: texto riscado e o motivo de ter saído.
-function OldVersion({ fact, label }: { fact: WrongFact; label: string }) {
-  return (
-    <div className="rounded-xl bg-canvas p-4">
-      <p className="type-caption font-semibold text-alert">
-        {label}
-        {fact.status_changed_at && ` em ${formatDate(fact.status_changed_at)}`}
-      </p>
-      <p className="type-body mt-1 text-ink-3 line-through">{fact.statement}</p>
+    <li className="card">
+      <div className="flex items-start justify-between gap-3">
+        <span className="type-caption font-semibold text-ink-2">{fieldLabel(fact.field)}</span>
+        {/* Só a exceção ganha selo: o normal é o próprio interlocutor ter dito. */}
+        {fact.confidence === "reported" && (
+          <span className="type-caption shrink-0 text-accent">
+            {FACT_CONFIDENCE_LABELS.reported}
+          </span>
+        )}
+      </div>
+      <p className="type-body mt-1 text-ink">{fact.statement}</p>
       {fact.verbatim && (
-        <p className="type-body mt-1 text-ink-3 line-through">&ldquo;{fact.verbatim}&rdquo;</p>
+        <p className="type-body mt-2 text-ink-2">&ldquo;{fact.verbatim}&rdquo;</p>
       )}
-      {fact.status_reason && (
-        <p className="type-callout mt-2 text-ink-2">Motivo: {fact.status_reason}</p>
+      {fact.source.happened_on && (
+        <p className="type-callout mt-3 text-ink-2">
+          origem: conversa de {formatDate(fact.source.happened_on)}
+        </p>
       )}
-    </div>
+      {fact.thesis_reason && (
+        <p className="type-callout mt-2 text-ink-2">Por quê: {fact.thesis_reason}</p>
+      )}
+    </li>
   );
 }
+
+function SectionTitle({ label, count, dot }: { label: string; count: number; dot?: string }) {
+  return (
+    <h2 className="type-headline flex items-center gap-3 text-ink">
+      {dot && (
+        <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: dot }} />
+      )}
+      <span>{label}</span>
+      <span className="text-ink-3 tabular-nums">{count}</span>
+    </h2>
+  );
+}
+
 export default function FirmPage() {
   const params = useParams<{ id: string }>();
   const firmId = params.id;
 
   const [firm, setFirm] = useState<Firm | null>(null);
   const [facts, setFacts] = useState<Fact[]>([]);
-  const [retracted, setRetracted] = useState<RetractedFact[]>([]);
   const [openQuestions, setOpenQuestions] = useState<OpenQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,7 +133,6 @@ export default function FirmPage() {
         if (cancelled) return;
         setFirm(firmData.firm);
         setFacts(firmData.facts ?? []);
-        setRetracted(firmData.retracted_facts ?? []);
         setOpenQuestions(questionsData.open_questions ?? []);
       } catch (err) {
         if (!cancelled) {
@@ -155,16 +149,21 @@ export default function FirmPage() {
     };
   }, [firmId]);
 
+  const context = facts.filter((fact) => !fact.thesis_signal);
+
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader>
         <Link href="/" className="header-link">
           ← Novo despejo
         </Link>
+        <Link href="/tese" className="header-link">
+          Tese
+        </Link>
         <SignOutButton />
       </AppHeader>
 
-      <main className="mx-auto flex w-full max-w-[692px] flex-1 flex-col gap-12 px-5 pt-14 pb-20">
+      <main className="mx-auto flex w-full max-w-[692px] flex-1 flex-col gap-14 px-5 pt-14 pb-20">
         {loading && <p className="type-body text-ink-2">Carregando…</p>}
 
         {error && <p className="card type-body text-ink">{error}</p>}
@@ -180,74 +179,60 @@ export default function FirmPage() {
               </p>
             </header>
 
-            <section className="flex flex-col gap-4">
-              <h2 className="type-block text-ink">O que se sabe</h2>
-              {facts.length === 0 && (
-                <p className="type-body text-ink-2">Nenhum fato gravado ainda.</p>
-              )}
-              <ul className="flex flex-col gap-3">
-                {facts.map((fact) => (
-                  <li key={fact.id} className="card">
-                    <div className="flex items-start justify-between gap-3">
-                      <FieldLabel field={fact.field} />
-                      <ConfidenceBadge confidence={fact.confidence} />
-                    </div>
-                    {fact.replaces.length > 0 && (
-                      <p className="type-caption mt-2 font-semibold text-accent">
-                        Versão corrigida
-                      </p>
-                    )}
-                    <p className="type-body mt-1 text-ink">{fact.statement}</p>
-                    {fact.verbatim && (
-                      <p className="type-body mt-2 text-ink-2">&ldquo;{fact.verbatim}&rdquo;</p>
-                    )}
-                    <Origin source={fact.source} />
-                    {fact.replaces.length > 0 && (
-                      <div className="mt-4 flex flex-col gap-3">
-                        {fact.replaces.map((old) => (
-                          <OldVersion key={old.id} fact={old} label="Substituído" />
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            {facts.length === 0 && (
+              <p className="type-body text-ink-2">Nenhum fato gravado ainda.</p>
+            )}
 
-            {retracted.length > 0 && (
-              <section className="flex flex-col gap-4">
-                <h2 className="type-block text-ink">Marcados como errados</h2>
-                <ul className="flex flex-col gap-3">
-                  {retracted.map((fact) => (
-                    <li key={fact.id} className="card">
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <FieldLabel field={fact.field} />
-                        <ConfidenceBadge confidence={fact.confidence} />
-                      </div>
-                      <OldVersion fact={fact} label="Marcado como errado" />
-                      <Origin source={fact.source} />
-                      {fact.replaces.length > 0 && (
-                        <div className="mt-4 flex flex-col gap-3">
-                          {fact.replaces.map((old) => (
-                            <OldVersion key={old.id} fact={old} label="Substituído" />
-                          ))}
-                        </div>
-                      )}
-                    </li>
+            {THESIS_SIGNALS.map((signal) => {
+              const inSection = facts.filter((fact) => fact.thesis_signal === signal);
+              return (
+                <section key={signal} className="flex flex-col gap-4">
+                  <SectionTitle
+                    label={THESIS_SIGNAL_LABELS[signal]}
+                    count={inSection.length}
+                    dot={SIGNAL_DOT[signal]}
+                  />
+                  {inSection.length === 0 ? (
+                    <p className="type-callout text-ink-3">Nenhum fato nesta leitura.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-3">
+                      {inSection.map((fact) => (
+                        <FactCard key={fact.id} fact={fact} />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              );
+            })}
+
+            {context.length > 0 && (
+              <details className="group flex flex-col gap-4">
+                <summary className="type-headline flex cursor-pointer list-none items-center gap-3 text-ink [&::-webkit-details-marker]:hidden">
+                  <span>Contexto</span>
+                  <span className="text-ink-3 tabular-nums">{context.length}</span>
+                  <span aria-hidden className="type-body text-ink-3 transition-transform group-open:rotate-90">
+                    ›
+                  </span>
+                </summary>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {context.map((fact) => (
+                    <FactCard key={fact.id} fact={fact} />
                   ))}
                 </ul>
-              </section>
+              </details>
             )}
 
             <section className="flex flex-col gap-4">
-              <h2 className="type-block text-ink">Perguntas da próxima conversa</h2>
+              <h2 className="type-headline text-ink">Perguntas da próxima conversa</h2>
               {openQuestions.length === 0 && (
                 <p className="type-body text-ink-2">Nada em aberto.</p>
               )}
               <ol className="flex flex-col gap-3">
                 {openQuestions.map((q) => (
                   <li key={q.id} className="card">
-                    <FieldLabel field={q.field} />
+                    <span className="type-caption font-semibold text-ink-2">
+                      {fieldLabel(q.field)}
+                    </span>
                     <p className="type-body mt-1 text-ink">{q.question}</p>
                   </li>
                 ))}

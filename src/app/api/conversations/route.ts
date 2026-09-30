@@ -7,6 +7,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
 import { readJsonBody } from "@/lib/api/read-json";
 import { requireUser } from "@/lib/auth/session";
+import { loadThesis } from "@/lib/thesis/store";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,14 @@ export async function POST(request: NextRequest) {
   );
   const emptyFields = PROFILE_FIELDS.filter((field) => !knownFields.has(field));
 
+  // A tese lê cada fato; sem tese salva, nenhum fato é classificado.
+  let thesis: string | null;
+  try {
+    thesis = (await loadThesis(supabase))?.text ?? null;
+  } catch (err) {
+    return jsonError(500, "Erro ao buscar a tese.", err instanceof Error ? err.message : err);
+  }
+
   const { data: conversation, error: conversationError } = await supabase
     .from("conversations")
     .insert({
@@ -98,6 +107,7 @@ export async function POST(request: NextRequest) {
       firmName: firm.name,
       contactName,
       emptyFields,
+      thesis,
     });
   } catch (err) {
     return jsonError(502, "Falha ao extrair fatos com o modelo.", {
@@ -106,7 +116,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { factsToInsert, openQuestionsToInsert } = prepareWrite(extraction, raw_dump);
+  const { factsToInsert, openQuestionsToInsert } = prepareWrite(extraction, raw_dump, thesis);
 
   const factsRecorded = factsToInsert.length
     ? await supabase
@@ -119,9 +129,11 @@ export async function POST(request: NextRequest) {
             statement: fact.statement,
             verbatim: fact.verbatim,
             confidence: fact.confidence,
+            thesis_signal: fact.thesis_signal ?? null,
+            thesis_reason: fact.thesis_reason ?? null,
           }))
         )
-        .select("id, field, statement, verbatim, confidence")
+        .select("id, field, statement, verbatim, confidence, thesis_signal, thesis_reason")
     : { data: [], error: null };
 
   if (factsRecorded.error)

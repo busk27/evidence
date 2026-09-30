@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SignOutButton } from "../sign-out-button";
 import { AppHeader } from "../app-header";
-import { stageLabel } from "@/lib/domain";
+import {
+  THESIS_SIGNAL_LABELS,
+  THESIS_SIGNALS,
+  stageLabel,
+  type ThesisSignal,
+} from "@/lib/domain";
 
 type FirmSummary = {
   id: string;
@@ -14,10 +19,27 @@ type FirmSummary = {
   size: string | null;
   facts_count: number;
   open_questions_count: number;
+  thesis_counts: Record<ThesisSignal, number>;
   last_conversation_on: string | null;
 };
 
-type Totals = { firms: number; facts: number; open_questions: number };
+type Totals = Record<ThesisSignal, number>;
+
+const SIGNAL_DOT: Record<ThesisSignal, string> = {
+  alinhado: "#34c759",
+  explorar: "#0071e3",
+  atencao: "#ff9500",
+};
+
+function Dot({ signal }: { signal: ThesisSignal }) {
+  return (
+    <span
+      aria-hidden
+      className="inline-block h-2 w-2 shrink-0 rounded-full"
+      style={{ background: SIGNAL_DOT[signal] }}
+    />
+  );
+}
 
 function formatDate(value: string | null) {
   if (!value) return null;
@@ -25,21 +47,14 @@ function formatDate(value: string | null) {
   return `${d}/${m}/${y}`;
 }
 
-function BigNumber({
-  value,
-  label,
-  accent = false,
-}: {
-  value: number;
-  label: string;
-  accent?: boolean;
-}) {
+function BigNumber({ value, signal }: { value: number; signal: ThesisSignal }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <span className={`type-hero tabular-nums ${accent ? "text-accent" : "text-ink"}`}>
-        {value}
+      <span className="type-hero tabular-nums text-ink">{value}</span>
+      <span className="type-body mt-3 flex items-center gap-2 text-ink-2">
+        <Dot signal={signal} />
+        {THESIS_SIGNAL_LABELS[signal]}
       </span>
-      <span className="type-body mt-3 text-ink-2">{label}</span>
     </div>
   );
 }
@@ -81,6 +96,9 @@ export default function FirmsPage() {
         <Link href="/" className="header-link">
           Novo despejo
         </Link>
+        <Link href="/tese" className="header-link">
+          Tese
+        </Link>
         <SignOutButton />
       </AppHeader>
 
@@ -93,9 +111,9 @@ export default function FirmsPage() {
 
         {totals && (
           <section className="grid grid-cols-3 gap-4 py-20">
-            <BigNumber value={totals.firms} label="firmas" />
-            <BigNumber value={totals.facts} label="fatos gravados" />
-            <BigNumber value={totals.open_questions} label="perguntas abertas" accent />
+            {THESIS_SIGNALS.map((signal) => (
+              <BigNumber key={signal} value={totals[signal] ?? 0} signal={signal} />
+            ))}
           </section>
         )}
 
@@ -115,14 +133,13 @@ export default function FirmsPage() {
                         <span className="pill">{stageLabel(firm.stage)}</span>
                       </div>
                       <div className="type-callout flex flex-wrap gap-x-3 text-ink-2">
-                        <span>
-                          <span className="tabular-nums">{firm.facts_count}</span>{" "}
-                          {firm.facts_count === 1 ? "fato" : "fatos"}
-                        </span>
-                        <span className="text-accent">
-                          <span className="tabular-nums">{firm.open_questions_count}</span>{" "}
-                          {firm.open_questions_count === 1 ? "pergunta aberta" : "perguntas abertas"}
-                        </span>
+                        {THESIS_SIGNALS.map((signal) => (
+                          <span key={signal} className="flex items-center gap-1.5">
+                            <Dot signal={signal} />
+                            <span className="tabular-nums">{firm.thesis_counts?.[signal] ?? 0}</span>{" "}
+                            {THESIS_SIGNAL_LABELS[signal].toLowerCase()}
+                          </span>
+                        ))}
                         <span>
                           {firm.last_conversation_on
                             ? `última conversa ${formatDate(firm.last_conversation_on)}`

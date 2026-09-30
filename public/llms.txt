@@ -68,6 +68,18 @@ open_questions_count (perguntas com status = open) e last_conversation_on
 Firmas marcadas como hidden ficam fora da lista e dos totais, mas continuam
 abrindo em GET /api/firms/{id}.
 
+Cada firma traz também thesis_counts { alinhado, explorar, atencao }: fatos
+válidos por leitura de tese. totals traz as mesmas três somas. Fato sem
+classificação não entra nessas contagens.
+
+### GET /api/thesis e PUT /api/thesis
+A tese do usuário (uma só): { thesis: { text, updated_at } | null }. PUT com
+{ text } salva. Cada conversa nova é lida por ela: todo fato ganha
+thesis_signal (alinhado | explorar | atencao | null) e thesis_reason, que
+começa com a hipótese citada ("H2 — ...") e tem uma frase. Fato sem relação
+com nenhuma hipótese fica com os dois nulos. A leitura nunca muda o texto do
+fato, e a trava de verbatim roda antes dela.
+
 ### POST /api/firms
 Cria uma firma, opcionalmente com um contato. Corpo: { name, country?, size?,
 contact?: { name, role?, email? } }. Toda firma nasce com stage =

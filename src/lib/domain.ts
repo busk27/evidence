@@ -92,7 +92,19 @@ export const FACT_CONFIDENCE_LABELS: Record<FactConfidence, string> = {
   reported: "Relatado por terceiro",
 };
 
-export const OPEN_QUESTION_STATUS = ["open", "answered", "dropped"] as const;
+// Leitura de cada fato pela lente da tese do usuário. Nulo = sem relação com
+// nenhuma hipótese (fica em "Contexto").
+export const THESIS_SIGNALS = ["alinhado", "explorar", "atencao"] as const;
+
+export type ThesisSignal = (typeof THESIS_SIGNALS)[number];
+
+export const THESIS_SIGNAL_LABELS: Record<ThesisSignal, string> = {
+  alinhado: "Alinhado à tese",
+  explorar: "Explorar melhor",
+  atencao: "Ponto de atenção",
+};
+
+export const OPEN_QUESTION_STATUS =["open", "answered", "dropped"] as const;
 
 export type OpenQuestionStatus = (typeof OPEN_QUESTION_STATUS)[number];
 

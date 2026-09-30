@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { jsonError } from "@/lib/api/respond";
 import { readJsonBody } from "@/lib/api/read-json";
 import { requireUser } from "@/lib/auth/session";
+import type { ThesisSignal } from "@/lib/domain";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
   const [firmsRes, factsRes, questionsRes, conversationsRes] = await Promise.all([
     // Firma hidden sai da lista e dos totais; continua abrindo por link direto.
     supabase.from("firms").select("id, name, stage, country, size").eq("hidden", false),
-    supabase.from("facts").select("firm_id").eq("status", "valid"),
+    supabase.from("facts").select("firm_id, thesis_signal").eq("status", "valid"),
     supabase.from("open_questions").select("firm_id").eq("status", "open"),
     supabase.from("conversations").select("firm_id, happened_on"),
   ]);
@@ -32,6 +33,14 @@ export async function GET(request: Request) {
     return byFirm;
   };
   const facts = count(factsRes.data ?? []);
+  // Fato sem classificação (Contexto) não entra nas contagens de tese.
+  const bySignal = (signal: ThesisSignal) =>
+    count((factsRes.data ?? []).filter((row) => row.thesis_signal === signal));
+  const signals = {
+    alinhado: bySignal("alinhado"),
+    explorar: bySignal("explorar"),
+    atencao: bySignal("atencao"),
+  };
   const questions = count(questionsRes.data ?? []);
 
   const lastConversation = new Map<string, string>();
@@ -49,6 +58,11 @@ export async function GET(request: Request) {
       size: firm.size,
       facts_count: facts.get(firm.id) ?? 0,
       open_questions_count: questions.get(firm.id) ?? 0,
+      thesis_counts: {
+        alinhado: signals.alinhado.get(firm.id) ?? 0,
+        explorar: signals.explorar.get(firm.id) ?? 0,
+        atencao: signals.atencao.get(firm.id) ?? 0,
+      },
       last_conversation_on: lastConversation.get(firm.id) ?? null,
     }))
     // Conversa mais recente primeiro; firma sem conversa vai para o fim.
@@ -63,6 +77,9 @@ export async function GET(request: Request) {
       firms: firms.length,
       facts: firms.reduce((sum, firm) => sum + firm.facts_count, 0),
       open_questions: firms.reduce((sum, firm) => sum + firm.open_questions_count, 0),
+      alinhado: firms.reduce((sum, firm) => sum + firm.thesis_counts.alinhado, 0),
+      explorar: firms.reduce((sum, firm) => sum + firm.thesis_counts.explorar, 0),
+      atencao: firms.reduce((sum, firm) => sum + firm.thesis_counts.atencao, 0),
     },
     firms,
   });

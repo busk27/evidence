@@ -3,23 +3,30 @@ import {
   VERBATIM_REQUIRED_FIELD,
   type FactConfidence,
   type ProfileField,
+  type ThesisSignal,
 } from "@/lib/domain";
 import { isAbsenceStatement } from "./absence";
 import { FIELD_QUESTIONS } from "./questions";
+
+// Leitura pela lente da tese: opcional (extração sem tese não traz).
+type ThesisReadingFields = {
+  thesis_signal?: ThesisSignal | null;
+  thesis_reason?: string | null;
+};
 
 export type ExtractedFact = {
   field: ProfileField;
   statement: string;
   verbatim: string | null;
   confidence: FactConfidence;
-};
+} & ThesisReadingFields;
 
 export type FactToRecord = {
   field: ProfileField;
   statement: string;
   verbatim: string | null;
   confidence: FactConfidence;
-};
+} & ThesisReadingFields;
 
 export type QuestionToRecord = {
   field: ProfileField;
@@ -80,6 +87,9 @@ export function classifyExtractedFacts(
       statement: fact.statement,
       verbatim: fact.verbatim,
       confidence: fact.confidence,
+      // A leitura de tese não decide se o fato grava; só acompanha o fato.
+      thesis_signal: fact.thesis_signal,
+      thesis_reason: fact.thesis_reason,
     });
   }
 

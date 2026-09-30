@@ -1,5 +1,6 @@
 import type { Extraction } from "@/lib/extraction/schema";
-import type { ProfileField } from "@/lib/domain";
+import type { ProfileField, ThesisSignal } from "@/lib/domain";
+import { acceptThesisReading } from "@/lib/thesis/signal";
 import { classifyExtractedFacts, type QuestionToRecord } from "./classify";
 import { keepOnlyMarkedVerbatim } from "./verbatim";
 import { FIELD_QUESTIONS, isUsableQuestion } from "./questions";
@@ -9,6 +10,8 @@ export type FactRow = {
   statement: string;
   verbatim: string | null;
   confidence: "stated" | "reported";
+  thesis_signal?: ThesisSignal | null;
+  thesis_reason?: string | null;
 };
 
 export type OpenQuestionRow = {
@@ -62,16 +65,30 @@ export function buildOpenQuestions(
  * paráfrase como citação. Função pura — nenhuma chamada a rede ou
  * banco aqui. Nunca produz nada que escreva em firms.stage (regra 3): o
  * retorno não tem esse campo, estruturalmente.
+ *
+ * Com a tese (thesis definido, mesmo que null), a leitura de cada fato passa
+ * por acceptThesisReading: formato "H<n> — uma frase", hipótese declarada na
+ * tese, ou fica sem classificação. O verbatim já foi zerado antes, então uma
+ * anotação do autor não chega à leitura de tese como fala do entrevistado.
  */
 export function prepareWrite(
   extraction: Extraction,
-  rawDump: string
+  rawDump: string,
+  thesis?: string | null
 ): PreparedWrite {
   const { factsToRecord, fieldsRejectedAsQuestions, fieldsLeftEmpty } =
     classifyExtractedFacts(keepOnlyMarkedVerbatim(extraction.facts, rawDump));
 
+  const factsToInsert =
+    thesis === undefined
+      ? factsToRecord
+      : factsToRecord.map((fact) => ({
+          ...fact,
+          ...acceptThesisReading(fact.thesis_signal, fact.thesis_reason, thesis),
+        }));
+
   return {
-    factsToInsert: factsToRecord,
+    factsToInsert,
     openQuestionsToInsert: buildOpenQuestions(
       {
         still_empty: [...extraction.still_empty, ...fieldsLeftEmpty],

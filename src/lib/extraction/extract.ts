@@ -1,10 +1,36 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { PROFILE_FIELDS, type ProfileField } from "@/lib/domain";
-import { extractionSchema, type Extraction } from "./schema";
+import {
+  extractionSchema,
+  modelExtractionSchema,
+  thesisReadingsSchema,
+  type Extraction,
+} from "./schema";
 
 // Identificador confirmado em developers.openai.com/api/docs/models/gpt-6-luna
 export const EXTRACTION_MODEL = "gpt-6-luna";
+
+// Mesmas regras de leitura para a extração e para a reclassificação.
+const THESIS_RULES = `Thesis reading (thesis_signal, thesis_reason):
+You may also receive the user's thesis: a short description followed by
+hypotheses written as "H1 — ...", "H2 — ...". For each fact, read it against
+the thesis. This reading is separate from the fact: never change the statement
+or the verbatim to fit the thesis.
+- thesis_signal is one of:
+  "alinhado"  — the fact supports a hypothesis;
+  "explorar"  — the fact touches a hypothesis but is incomplete, vague, or needs
+                a follow-up to count as evidence;
+  "atencao"   — the fact contradicts or weakens a hypothesis, or is a risk to it.
+- Only classify a fact that relates to a specific hypothesis. If it does not,
+  thesis_signal and thesis_reason are both null. Do not force a fit.
+- thesis_reason starts with the hypothesis it refers to, exactly as
+  "H<n> — ", followed by ONE short sentence saying why, in the language of the
+  dump. Example: "H1 — o sócio estimou 30 a 40% do tempo do projeto nessa etapa."
+- The author's own notes are not the interlocutor's words. A fact that only the
+  author wrote down cannot, by itself, confirm a hypothesis as "alinhado" on the
+  strength of a quote.
+- If no thesis is given, thesis_signal and thesis_reason are null for every fact.`;
 
 const SYSTEM_PROMPT = `You are extracting evidence from a raw dump of a B2B discovery conversation.
 
@@ -12,6 +38,7 @@ You will receive:
 - the raw dump, written or dictated right after the call
 - the name of the firm and the contact
 - the list of profile fields, and which of them are currently empty
+- the user's thesis, if one is saved
 
 Rules:
 1. Extract only what was said. Never infer, never complete, never round a number.
@@ -48,14 +75,29 @@ Field notes:
 - horas_do_gargalo_por_projeto: the time the bottleneck takes per project, in
   whatever unit the speaker gave it: hours, days, or a share of the project time
   ("30 a 40% do tempo do projeto"). Record it as said, with its caveat. Never
-  convert units.`;
+  convert units.
+
+${THESIS_RULES}`;
+
+const RECLASSIFY_PROMPT = `You receive facts already extracted from a B2B discovery conversation,
+the raw dump they came from, and the user's thesis. Do not change the facts.
+Return one reading per fact id.
+
+${THESIS_RULES}`;
 
 export type ExtractionInput = {
   rawDump: string;
   firmName: string;
   contactName: string | null;
   emptyFields: ProfileField[];
+  thesis: string | null;
 };
+
+function thesisBlock(thesis: string | null): string[] {
+  return thesis && thesis.trim()
+    ? ["Thesis:", thesis.trim()]
+    : ["Thesis: none saved. thesis_signal and thesis_reason are null for every fact."];
+}
 
 function buildUserPrompt(input: ExtractionInput): string {
   return [
@@ -63,6 +105,8 @@ function buildUserPrompt(input: ExtractionInput): string {
     `Contact: ${input.contactName ?? "unknown"}`,
     `Profile fields: ${PROFILE_FIELDS.join(", ")}`,
     `Currently empty fields: ${input.emptyFields.join(", ") || "none"}`,
+    "",
+    ...thesisBlock(input.thesis),
     "",
     "Raw dump:",
     input.rawDump,
@@ -95,7 +139,7 @@ export async function extractFactsFromDump(
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: buildUserPrompt(input) },
     ],
-    text: { format: zodTextFormat(extractionSchema, "extraction") },
+    text: { format: zodTextFormat(modelExtractionSchema, "extraction") },
   });
 
   const parsed = response.output_parsed;
@@ -112,4 +156,48 @@ export async function extractFactsFromDump(
     );
   }
   return result.data;
+}
+
+export type FactToRead = {
+  id: string;
+  field: ProfileField;
+  statement: string;
+  verbatim: string | null;
+  confidence: string;
+};
+
+/**
+ * Lê fatos já gravados pela lente da tese. Devolve a leitura crua do modelo;
+ * quem chama passa cada uma por acceptThesisReading antes de gravar.
+ */
+export async function readFactsAgainstThesis(input: {
+  facts: FactToRead[];
+  rawDump: string;
+  thesis: string;
+}) {
+  const response = await getClient().responses.parse({
+    model: EXTRACTION_MODEL,
+    input: [
+      { role: "system", content: RECLASSIFY_PROMPT },
+      {
+        role: "user",
+        content: [
+          ...thesisBlock(input.thesis),
+          "",
+          "Facts (JSON):",
+          JSON.stringify(input.facts),
+          "",
+          "Raw dump:",
+          input.rawDump,
+        ].join("\n"),
+      },
+    ],
+    text: { format: zodTextFormat(thesisReadingsSchema, "thesis_readings") },
+  });
+
+  const result = thesisReadingsSchema.safeParse(response.output_parsed);
+  if (!result.success) {
+    throw new Error(`Leitura de tese fora do schema: ${result.error.message}`);
+  }
+  return result.data.readings;
 }

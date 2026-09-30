@@ -76,6 +76,9 @@ export default function Home() {
         <Link href="/firms" className="header-link">
           Ver firmas →
         </Link>
+        <Link href="/tese" className="header-link">
+          Tese
+        </Link>
         <SignOutButton />
       </AppHeader>
 
