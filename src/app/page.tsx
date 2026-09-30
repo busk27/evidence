@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { SignOutButton } from "./sign-out-button";
+import { AppHeader } from "./app-header";
 
 type FactRecorded = {
   id: string;
@@ -70,32 +71,25 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 dark:bg-black">
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="flex flex-1 flex-col">
+      <AppHeader>
+        <Link href="/firms" className="header-link">
+          Ver firmas →
+        </Link>
+        <SignOutButton />
+      </AppHeader>
+
+      <main className="mx-auto flex w-full max-w-[692px] flex-1 flex-col gap-8 px-5 pt-14 pb-20">
         <header>
-          <div className="flex items-baseline justify-between gap-4">
-            <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-              Evidence
-            </h1>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/firms"
-                className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
-              >
-                Ver firmas →
-              </Link>
-              <SignOutButton />
-            </div>
-          </div>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="type-block text-ink-2">
             Despeja a conversa. A gente extrai os fatos e diz o que ainda falta
             saber.
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="firm_id" className="text-sm font-medium text-black dark:text-zinc-50">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="firm_id" className="type-caption font-semibold text-ink-2">
               ID da firma
             </label>
             <input
@@ -104,25 +98,25 @@ export default function Home() {
               value={firmId}
               onChange={(e) => setFirmId(e.target.value)}
               placeholder="uuid da firma"
-              className="h-11 rounded-lg border border-zinc-300 bg-white px-3 text-base text-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className="field"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="contact_id" className="text-sm font-medium text-black dark:text-zinc-50">
-              ID do contato <span className="font-normal text-zinc-500">(opcional)</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="contact_id" className="type-caption font-semibold text-ink-2">
+              ID do contato <span className="font-normal text-ink-3">(opcional)</span>
             </label>
             <input
               id="contact_id"
               value={contactId}
               onChange={(e) => setContactId(e.target.value)}
               placeholder="uuid do contato"
-              className="h-11 rounded-lg border border-zinc-300 bg-white px-3 text-base text-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className="field"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="raw_dump" className="text-sm font-medium text-black dark:text-zinc-50">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="raw_dump" className="type-caption font-semibold text-ink-2">
               Despejo da conversa
             </label>
             <textarea
@@ -132,43 +126,32 @@ export default function Home() {
               onChange={(e) => setRawDump(e.target.value)}
               placeholder="Cola ou dita aqui, logo depois da call."
               rows={10}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className="field"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="h-12 rounded-full bg-black px-5 text-base font-medium text-white transition-colors disabled:opacity-50 dark:bg-white dark:text-black"
-          >
-            {submitting ? "Extraindo..." : "Gravar conversa"}
+          <button type="submit" disabled={submitting} className="btn-primary self-start">
+            {submitting ? "Extraindo…" : "Gravar conversa"}
           </button>
         </form>
 
-        {error && (
-          <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
-            {error}
-          </p>
-        )}
+        {error && <p className="card type-body text-ink">{error}</p>}
 
         {result && (
-          <section className="flex flex-col gap-3 rounded-lg border border-zinc-300 bg-white px-4 py-4 dark:border-zinc-700 dark:bg-zinc-950">
-            <p className="text-sm font-medium text-black dark:text-zinc-50">
+          <section className="card flex flex-col gap-4">
+            <p className="type-block text-ink">
               Gravado: {result.facts_recorded.length} fato(s),{" "}
               {result.open_questions_recorded.length} pergunta(s) em aberto.
             </p>
-            <ul className="flex flex-col gap-2 text-sm">
+            <ul className="flex flex-col gap-2">
               {result.facts_recorded.map((fact) => (
-                <li key={fact.id} className="text-zinc-700 dark:text-zinc-300">
-                  <span className="font-medium">{fact.field}:</span>{" "}
+                <li key={fact.id} className="type-body text-ink">
+                  <span className="font-semibold">{fact.field}:</span>{" "}
                   {fact.statement}
                 </li>
               ))}
             </ul>
-            <Link
-              href={`/firms/${result.conversation.firm_id}`}
-              className="text-sm font-medium underline text-black dark:text-zinc-50"
-            >
+            <Link href={`/firms/${result.conversation.firm_id}`} className="btn-secondary self-start">
               Ver perfil da firma →
             </Link>
           </section>

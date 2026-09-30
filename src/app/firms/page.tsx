@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SignOutButton } from "../sign-out-button";
+import { AppHeader } from "../app-header";
+import { stageLabel } from "@/lib/domain";
 
 type FirmSummary = {
   id: string;
@@ -33,25 +35,14 @@ function BigNumber({
   accent?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 text-center">
-      <span
-        className={`text-6xl font-semibold tabular-nums leading-none sm:text-7xl ${
-          accent ? "text-amber-600 dark:text-amber-400" : "text-black dark:text-zinc-50"
-        }`}
-      >
+    <div className="flex flex-col items-center text-center">
+      <span className={`type-hero tabular-nums ${accent ? "text-accent" : "text-ink"}`}>
         {value}
       </span>
-      <span
-        className={`text-sm font-medium sm:text-base ${
-          accent ? "text-amber-700 dark:text-amber-300" : "text-zinc-600 dark:text-zinc-400"
-        }`}
-      >
-        {label}
-      </span>
+      <span className="type-body mt-3 text-ink-2">{label}</span>
     </div>
   );
 }
-
 export default function FirmsPage() {
   const [firms, setFirms] = useState<FirmSummary[]>([]);
   const [totals, setTotals] = useState<Totals | null>(null);
@@ -85,33 +76,23 @@ export default function FirmsPage() {
   }, []);
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 dark:bg-black">
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 py-8 sm:px-6">
-        <header className="flex items-baseline justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            Evidence
-          </h1>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
-            >
-              + Novo despejo
-            </Link>
-            <SignOutButton />
-          </div>
-        </header>
+    <div className="flex flex-1 flex-col">
+      <AppHeader>
+        <Link href="/" className="header-link">
+          Novo despejo
+        </Link>
+        <SignOutButton />
+      </AppHeader>
 
-        {loading && <p className="text-sm text-zinc-500">Carregando...</p>}
+      <main className="mx-auto flex w-full max-w-[980px] flex-1 flex-col px-5 pb-20">
+        {loading && <p className="type-body pt-20 text-center text-ink-2">Carregando…</p>}
 
         {error && (
-          <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
-            {error}
-          </p>
+          <p className="card type-body mt-12 text-ink">{error}</p>
         )}
 
         {totals && (
-          <section className="grid grid-cols-3 gap-4 py-4">
+          <section className="grid grid-cols-3 gap-4 py-20">
             <BigNumber value={totals.firms} label="firmas" />
             <BigNumber value={totals.facts} label="fatos gravados" />
             <BigNumber value={totals.open_questions} label="perguntas abertas" accent />
@@ -119,46 +100,44 @@ export default function FirmsPage() {
         )}
 
         {!loading && !error && firms.length === 0 && (
-          <p className="text-sm text-zinc-500">Nenhuma firma cadastrada ainda.</p>
+          <p className="type-body text-center text-ink-2">Nenhuma firma cadastrada ainda.</p>
         )}
 
         {firms.length > 0 && (
-          <ul className="flex flex-col gap-4">
-            {firms.map((firm) => (
-              <li key={firm.id}>
-                <Link
-                  href={`/firms/${firm.id}`}
-                  className="flex flex-col gap-3 rounded-lg border border-zinc-300 bg-white px-5 py-4 transition-colors hover:border-zinc-500 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-500"
-                >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-lg font-semibold text-black dark:text-zinc-50">
-                      {firm.name}
+          <section className="mx-auto w-full max-w-[692px]">
+            <ul className="grouped-list">
+              {firms.map((firm) => (
+                <li key={firm.id}>
+                  <Link href={`/firms/${firm.id}`} className="grouped-row">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="type-body font-semibold text-ink">{firm.name}</span>
+                        <span className="pill">{stageLabel(firm.stage)}</span>
+                      </div>
+                      <div className="type-callout flex flex-wrap gap-x-3 text-ink-2">
+                        <span>
+                          <span className="tabular-nums">{firm.facts_count}</span>{" "}
+                          {firm.facts_count === 1 ? "fato" : "fatos"}
+                        </span>
+                        <span className="text-accent">
+                          <span className="tabular-nums">{firm.open_questions_count}</span>{" "}
+                          {firm.open_questions_count === 1 ? "pergunta aberta" : "perguntas abertas"}
+                        </span>
+                        <span>
+                          {firm.last_conversation_on
+                            ? `última conversa ${formatDate(firm.last_conversation_on)}`
+                            : "sem conversa"}
+                        </span>
+                      </div>
+                    </div>
+                    <span aria-hidden className="text-[22px] leading-none text-ink-3">
+                      ›
                     </span>
-                    <span className="rounded-full bg-zinc-200 px-2.5 py-0.5 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                      {firm.stage}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-base text-zinc-700 dark:text-zinc-300">
-                    <span>
-                      <span className="font-semibold tabular-nums">{firm.facts_count}</span>{" "}
-                      {firm.facts_count === 1 ? "fato" : "fatos"}
-                    </span>
-                    <span className="text-amber-700 dark:text-amber-300">
-                      <span className="font-semibold tabular-nums">
-                        {firm.open_questions_count}
-                      </span>{" "}
-                      {firm.open_questions_count === 1 ? "pergunta aberta" : "perguntas abertas"}
-                    </span>
-                    <span className="text-zinc-500">
-                      {firm.last_conversation_on
-                        ? `última conversa ${formatDate(firm.last_conversation_on)}`
-                        : "sem conversa"}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </main>
     </div>

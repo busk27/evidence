@@ -13,6 +13,23 @@ export const FIRM_STAGES = [
 
 export type FirmStage = (typeof FIRM_STAGES)[number];
 
+// Rótulo legível de cada estágio, para a tela.
+export const FIRM_STAGE_LABELS: Record<FirmStage, string> = {
+  "nao-contatada": "Não contatada",
+  "conversa-marcada": "Conversa marcada",
+  "conversa-feita": "Conversa feita",
+  "preco-testado": "Preço testado",
+  "piloto-proposto": "Piloto proposto",
+  assinou: "Assinou",
+  descartada: "Descartada",
+};
+
+export function stageLabel(stage: string): string {
+  return (FIRM_STAGES as readonly string[]).includes(stage)
+    ? FIRM_STAGE_LABELS[stage as FirmStage]
+    : stage;
+}
+
 export const PROFILE_FIELDS = [
   "interlocutor",
   "decisor_ou_operador",
@@ -71,8 +88,8 @@ export const FACT_CONFIDENCE = ["stated", "reported"] as const;
 export type FactConfidence = (typeof FACT_CONFIDENCE)[number];
 
 export const FACT_CONFIDENCE_LABELS: Record<FactConfidence, string> = {
-  stated: "dito pelo interlocutor",
-  reported: "relato de terceiro",
+  stated: "Dito pelo interlocutor",
+  reported: "Relatado por terceiro",
 };
 
 export const OPEN_QUESTION_STATUS = ["open", "answered", "dropped"] as const;

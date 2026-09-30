@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { SignOutButton } from "../../sign-out-button";
+import { AppHeader } from "../../app-header";
 import {
   FACT_CONFIDENCE_LABELS,
   fieldLabel,
+  stageLabel,
   type FactConfidence,
 } from "@/lib/domain";
 
@@ -58,20 +60,14 @@ function formatDate(value: string | null) {
 }
 
 function FieldLabel({ field }: { field: string }) {
-  return (
-    <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-      {fieldLabel(field)}
-    </span>
-  );
+  return <span className="type-caption font-semibold text-ink-2">{fieldLabel(field)}</span>;
 }
 
 function ConfidenceBadge({ confidence }: { confidence: FactConfidence }) {
   return (
     <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-        confidence === "stated"
-          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-          : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+      className={`type-caption shrink-0 ${
+        confidence === "stated" ? "text-ink-3" : "text-accent"
       }`}
     >
       {FACT_CONFIDENCE_LABELS[confidence] ?? confidence}
@@ -82,7 +78,7 @@ function ConfidenceBadge({ confidence }: { confidence: FactConfidence }) {
 function Origin({ source }: { source: Source }) {
   if (!source.happened_on) return null;
   return (
-    <p className="mt-3 text-base font-medium text-zinc-800 dark:text-zinc-200">
+    <p className="type-callout mt-3 text-ink-2">
       origem: conversa de {formatDate(source.happened_on)}
     </p>
   );
@@ -91,28 +87,21 @@ function Origin({ source }: { source: Source }) {
 // Versão antiga de um fato: texto riscado e o motivo de ter saído.
 function OldVersion({ fact, label }: { fact: WrongFact; label: string }) {
   return (
-    <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950/40">
-      <p className="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
+    <div className="rounded-xl bg-canvas p-4">
+      <p className="type-caption font-semibold text-alert">
         {label}
         {fact.status_changed_at && ` em ${formatDate(fact.status_changed_at)}`}
       </p>
-      <p className="mt-1 text-sm text-zinc-600 line-through decoration-red-500 dark:text-zinc-400">
-        {fact.statement}
-      </p>
+      <p className="type-body mt-1 text-ink-3 line-through">{fact.statement}</p>
       {fact.verbatim && (
-        <p className="mt-1 text-sm italic text-zinc-500 line-through decoration-red-500">
-          &ldquo;{fact.verbatim}&rdquo;
-        </p>
+        <p className="type-body mt-1 text-ink-3 line-through">&ldquo;{fact.verbatim}&rdquo;</p>
       )}
       {fact.status_reason && (
-        <p className="mt-1 text-sm text-red-800 dark:text-red-200">
-          <span className="font-semibold">Motivo:</span> {fact.status_reason}
-        </p>
+        <p className="type-callout mt-2 text-ink-2">Motivo: {fact.status_reason}</p>
       )}
     </div>
   );
 }
-
 export default function FirmPage() {
   const params = useParams<{ id: string }>();
   const firmId = params.id;
@@ -167,74 +156,54 @@ export default function FirmPage() {
   }, [firmId]);
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 dark:bg-black">
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="text-sm font-medium text-zinc-500 hover:text-black dark:hover:text-zinc-50"
-          >
-            ← Novo despejo
-          </Link>
-          <SignOutButton />
-        </div>
+    <div className="flex flex-1 flex-col">
+      <AppHeader>
+        <Link href="/" className="header-link">
+          ← Novo despejo
+        </Link>
+        <SignOutButton />
+      </AppHeader>
 
-        {loading && <p className="text-sm text-zinc-500">Carregando...</p>}
+      <main className="mx-auto flex w-full max-w-[692px] flex-1 flex-col gap-12 px-5 pt-14 pb-20">
+        {loading && <p className="type-body text-ink-2">Carregando…</p>}
 
-        {error && (
-          <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
-            {error}
-          </p>
-        )}
+        {error && <p className="card type-body text-ink">{error}</p>}
 
         {firm && (
           <>
-            <header>
-              <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-                {firm.name}
-              </h1>
-              <p className="mt-1 flex flex-wrap gap-x-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <span className="rounded-full bg-zinc-200 px-2 py-0.5 dark:bg-zinc-800">
-                  {firm.stage}
-                </span>
+            <header className="flex flex-col gap-3">
+              <h1 className="type-title text-ink">{firm.name}</h1>
+              <p className="type-body flex flex-wrap items-center gap-x-3 gap-y-2 text-ink-2">
+                <span className="pill">{stageLabel(firm.stage)}</span>
                 {firm.country && <span>{firm.country}</span>}
                 {firm.size && <span>{firm.size}</span>}
               </p>
             </header>
 
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-medium text-black dark:text-zinc-50">
-                O que se sabe
-              </h2>
+            <section className="flex flex-col gap-4">
+              <h2 className="type-block text-ink">O que se sabe</h2>
               {facts.length === 0 && (
-                <p className="text-sm text-zinc-500">Nenhum fato gravado ainda.</p>
+                <p className="type-body text-ink-2">Nenhum fato gravado ainda.</p>
               )}
               <ul className="flex flex-col gap-3">
                 {facts.map((fact) => (
-                  <li
-                    key={fact.id}
-                    className="rounded-lg border border-zinc-300 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950"
-                  >
-                    <div className="flex items-start justify-between gap-2">
+                  <li key={fact.id} className="card">
+                    <div className="flex items-start justify-between gap-3">
                       <FieldLabel field={fact.field} />
                       <ConfidenceBadge confidence={fact.confidence} />
                     </div>
                     {fact.replaces.length > 0 && (
-                      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                      <p className="type-caption mt-2 font-semibold text-accent">
                         Versão corrigida
                       </p>
                     )}
-                    <p className="mt-1 text-sm text-black dark:text-zinc-50">
-                      {fact.statement}
-                    </p>
+                    <p className="type-body mt-1 text-ink">{fact.statement}</p>
                     {fact.verbatim && (
-                      <p className="mt-1 text-sm italic text-zinc-500">
-                        &ldquo;{fact.verbatim}&rdquo;
-                      </p>
+                      <p className="type-body mt-2 text-ink-2">&ldquo;{fact.verbatim}&rdquo;</p>
                     )}
                     <Origin source={fact.source} />
                     {fact.replaces.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-2">
+                      <div className="mt-4 flex flex-col gap-3">
                         {fact.replaces.map((old) => (
                           <OldVersion key={old.id} fact={old} label="Substituído" />
                         ))}
@@ -246,24 +215,19 @@ export default function FirmPage() {
             </section>
 
             {retracted.length > 0 && (
-              <section className="flex flex-col gap-3">
-                <h2 className="text-lg font-medium text-black dark:text-zinc-50">
-                  Marcados como errados
-                </h2>
+              <section className="flex flex-col gap-4">
+                <h2 className="type-block text-ink">Marcados como errados</h2>
                 <ul className="flex flex-col gap-3">
                   {retracted.map((fact) => (
-                    <li
-                      key={fact.id}
-                      className="rounded-lg border border-zinc-300 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950"
-                    >
-                      <div className="mb-2 flex items-start justify-between gap-2">
+                    <li key={fact.id} className="card">
+                      <div className="mb-3 flex items-start justify-between gap-3">
                         <FieldLabel field={fact.field} />
                         <ConfidenceBadge confidence={fact.confidence} />
                       </div>
                       <OldVersion fact={fact} label="Marcado como errado" />
                       <Origin source={fact.source} />
                       {fact.replaces.length > 0 && (
-                        <div className="mt-3 flex flex-col gap-2">
+                        <div className="mt-4 flex flex-col gap-3">
                           {fact.replaces.map((old) => (
                             <OldVersion key={old.id} fact={old} label="Substituído" />
                           ))}
@@ -275,23 +239,16 @@ export default function FirmPage() {
               </section>
             )}
 
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-medium text-black dark:text-zinc-50">
-                Perguntas da próxima conversa
-              </h2>
+            <section className="flex flex-col gap-4">
+              <h2 className="type-block text-ink">Perguntas da próxima conversa</h2>
               {openQuestions.length === 0 && (
-                <p className="text-sm text-zinc-500">Nada em aberto.</p>
+                <p className="type-body text-ink-2">Nada em aberto.</p>
               )}
-              <ol className="flex flex-col gap-2">
+              <ol className="flex flex-col gap-3">
                 {openQuestions.map((q) => (
-                  <li
-                    key={q.id}
-                    className="rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-                  >
+                  <li key={q.id} className="card">
                     <FieldLabel field={q.field} />
-                    <p className="mt-1 text-black dark:text-zinc-50">
-                      {q.question}
-                    </p>
+                    <p className="type-body mt-1 text-ink">{q.question}</p>
                   </li>
                 ))}
               </ol>
