@@ -19,9 +19,13 @@ the thesis. This reading is separate from the fact: never change the statement
 or the verbatim to fit the thesis.
 - thesis_signal is one of:
   "alinhado"  — the fact supports a hypothesis;
-  "explorar"  — the fact touches a hypothesis but is incomplete, vague, or needs
-                a follow-up to count as evidence;
   "atencao"   — the fact contradicts or weakens a hypothesis, or is a risk to it.
+                An objection, doubt or complaint the interlocutor stated about
+                something a hypothesis claims is ALWAYS "atencao", never
+                "explorar" — even if it is incomplete or needs a follow-up;
+  "explorar"  — the fact touches a hypothesis but neither confirms nor
+                threatens it (incomplete, vague, or needs a follow-up to count
+                as evidence either way).
 - Only classify a fact that relates to a specific hypothesis. If it does not,
   thesis_signal and thesis_reason are both null. Do not force a fit.
 - thesis_reason starts with the hypothesis it refers to, exactly as

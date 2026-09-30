@@ -24,7 +24,7 @@ export const FIELD_QUESTIONS: Record<ProfileField, string> = {
   projetos_por_mes: "Quantos projetos vocês tocam por mês, em média?",
   destino_da_hora_economizada:
     "Se essa parte levasse metade do tempo, o que vocês fariam com as horas que sobram?",
-  preco_testado: "Se isso resolvesse essa parte da DD, quanto faria sentido pagar por mês?",
+  preco_testado: "Se isso resolvesse essa parte da DD, quanto faria sentido pagar por DD?",
   reacao_ao_preco: "Olhando esse valor, o que você acha: caro, justo ou barato? Por quê?",
   objecao_principal: "O que te faria não usar uma ferramenta como essa?",
   shadowing: "Eu poderia acompanhar uma DD de vocês, só observando, do começo ao fim?",
