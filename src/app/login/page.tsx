@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Image from "next/image";
 import { login } from "./actions";
 
 export default function LoginPage() {
@@ -10,7 +11,16 @@ export default function LoginPage() {
     <div className="flex flex-1 flex-col">
       <main className="mx-auto flex w-full max-w-[360px] flex-1 flex-col justify-center gap-10 px-5 py-16">
         <header className="flex flex-col gap-3 text-center">
-          <h1 className="type-title text-ink">Evidence</h1>
+          <h1 className="flex justify-center">
+            <Image
+              src="/brand/evidence-logo.svg"
+              alt="Evidence"
+              width={294}
+              height={44}
+              priority
+              className="h-[44px] w-auto"
+            />
+          </h1>
           <p className="type-block font-normal text-ink-2">Entre para continuar.</p>
         </header>
 
